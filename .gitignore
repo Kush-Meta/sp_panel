@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# CatBoost training logs
+catboost_info/
+
+# Heavy / regenerable data: the SEC companyfacts cache, raw collection outputs,
+# and large parquets are NOT committed (2.4 GB, and one file exceeds GitHub's
+# 100 MB limit). They are reproducible via the collection pipeline — see README.
+# A curated set of small result artifacts is force-added in the initial commit
+# (panel.parquet, model_metrics_*.csv, etc.) so the evaluation is re-runnable
+# directly from the clone.
+data/
