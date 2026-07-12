@@ -124,7 +124,9 @@ def main():
 
     # Stage 5: short interest (optional; needs FINRA creds).
     if do("short"):
-        si = fetch_short_interest(universe["ticker"].tolist())
+        # Request from 2013 (the walk-forward eval starts 2014Q1); FINRA
+        # returns whatever history the dataset actually has.
+        si = fetch_short_interest(universe["ticker"].tolist(), start_date="2013-01-01")
         _save(si, "short_interest")
         manifest["stages"]["short_rows"] = int(len(si))
 

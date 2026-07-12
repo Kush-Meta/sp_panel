@@ -18,7 +18,11 @@ import requests
 import pandas as pd
 
 TOKEN_URL = "https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token"
-DATA_URL = "https://api.finra.org/data/group/otcMarket/name/EquityShortInterest"
+# ConsolidatedShortInterest covers exchange-listed (NYSE/Nasdaq) securities —
+# the whole S&P universe. EquityShortInterest, despite the promising name, is
+# OTC-market securities only and returns zero rows for listed tickers. API
+# history starts ~2018 regardless of the requested start date.
+DATA_URL = "https://api.finra.org/data/group/otcMarket/name/ConsolidatedShortInterest"
 
 
 def _get_token():
@@ -54,7 +58,7 @@ def fetch_short_interest(tickers, start_date="2018-01-01") -> pd.DataFrame:
                 {"compareType": "GTE", "fieldName": "settlementDate", "fieldValue": start_date},
             ],
             "domainFilters": [
-                {"fieldName": "issueSymbolIdentifier", "values": [tk.replace(".", "")]}
+                {"fieldName": "symbolCode", "values": [tk.replace(".", "")]}
             ],
         }
         try:

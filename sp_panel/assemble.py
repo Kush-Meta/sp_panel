@@ -44,7 +44,7 @@ YOY_LO, YOY_HI = -0.95, 3.0
 MACRO_LEVELS = [
     "fed_funds", "ust_10y", "ust_2y", "ust_3m", "yield_curve_10y2y",
     "cpi", "core_pce", "unemployment", "ism_pmi_proxy", "retail_sales",
-    "consumer_sentiment", "vix", "hy_spread", "usd_index", "wti_oil",
+    "consumer_sentiment", "vix", "baa_spread", "usd_index", "wti_oil",
 ]
 MACRO_CHANGES = ["cpi", "retail_sales", "ism_pmi_proxy", "wti_oil", "usd_index"]
 
@@ -84,7 +84,8 @@ def clean_quarterly(fin):
     ratio_inputs = ["gross_profit", "operating_income", "net_income", "dep_amort",
                     "rd_expense", "sga_expense", "capex", "cfo", "cash", "assets",
                     "assets_current", "liabilities_current", "long_term_debt",
-                    "equity", "interest_expense", "inventory", "shares_outstanding"]
+                    "equity", "interest_expense", "inventory", "shares_outstanding",
+                    "deferred_revenue", "receivables", "goodwill"]
     keep = ["ticker", "cik", "revenue"] + [c for c in ratio_inputs if c in fin.columns]
 
     out = []
@@ -170,6 +171,27 @@ def _causal_features(g, lag):
             f[name] = s
             if name in ("f_m_gross", "f_m_oper", "f_m_net", "f_m_ebitda"):
                 f[f"{name}_chg4"] = s - g[col].shift(lag + 4)
+
+    # accounting leading indicators (as-of T-lag, like everything above).
+    # Deferred revenue = cash collected for undelivered product: its YoY change
+    # (scaled by revenue) leads reported sales; level vs TTM revenue captures
+    # the size of the contracted pipeline. Receivables outgrowing revenue is
+    # the classic aggressive-recognition red flag. A goodwill jump marks a
+    # closed acquisition: the next four quarters of YoY are mechanically
+    # inflated, so the model gets both the jump size and a "deal in the last
+    # year" flag to separate inorganic from organic growth.
+    if "deferred_revenue" in g.columns:
+        dr = g["deferred_revenue"]
+        f["f_acct_defrev_chg4"] = (_safe_div(dr - dr.shift(4), g["revenue"].shift(4))).shift(lag)
+        f["f_acct_defrev_to_rev"] = _safe_div(dr, g["ttm_revenue"]).shift(lag)
+    if "receivables" in g.columns:
+        recv_yoy = g["receivables"] / g["receivables"].shift(4) - 1.0
+        f["f_acct_recv_gap"] = (recv_yoy - g["yoy"]).shift(lag)
+    if "goodwill" in g.columns:
+        gw = g["goodwill"]
+        f["f_acct_gw_jump"] = _safe_div(gw - gw.shift(1), g["assets"]).shift(lag)
+        big_jump = (gw.pct_change(fill_method=None) > 0.05) & ((gw - gw.shift(1)) > 0)
+        f["f_acct_ma_recent"] = (big_jump.rolling(4, min_periods=1).max()).shift(lag)
 
     # lagged raw fundamentals needed by the market block (as-of T-lag)
     for col in ("ttm_revenue", "shares_outstanding", "long_term_debt", "cash"):
@@ -320,6 +342,122 @@ def add_guidance_features(panel, guidance):
     return panel
 
 
+def add_filing_event_features(panel, events, feature_lag=1):
+    """Market reaction to the T-feature_lag report's filing (f_evt_*).
+
+    The abnormal return around an earnings filing is the market's compression
+    of everything the tabular features can't see (guidance call, segment
+    detail, tone), and PEAD research says drift is strongest when driven by
+    revenue surprises. Timing: the T-1 report is FILED ~40 days into quarter T,
+    which is exactly the panel's stated forecast moment ("post-earnings,
+    next-quarter forecast") — the same information timing as f_lag_yoy_1
+    itself, which is also only public once T-1 reports. The CAR windows end
+    ~5 trading days after that filing, months before T's own results exist,
+    so nothing about the target leaks. The earnings 8-K precedes the 10-Q by
+    a median of 2 days in this universe, so the [-5,-1] window captures the
+    press-release reaction and day 0/+ the filing itself.
+    """
+    if events is None or events.empty:
+        return panel
+    ev = events.copy()
+    ev["src_q"] = pd.PeriodIndex(ev["report_q"], freq="Q")
+    ev = (ev.sort_values(["ticker", "src_q", "eff"])
+            .drop_duplicates(["ticker", "src_q"], keep="last"))
+    # persistent surprise: sum of the last 4 reports' announcement CARs
+    ev["car_sum4"] = (ev.groupby("ticker")["CAR_m1_p1"]
+                        .transform(lambda s: s.rolling(4, min_periods=2).sum()))
+    ev["target_quarter"] = (ev["src_q"] + feature_lag).astype(str)
+    cols = {"CAR_m1_p1": "f_evt_car_m1p1",     # immediate reaction
+            "CAR_p1_p5": "f_evt_car_p1p5",     # early drift after the filing
+            "CAR_m5_m1": "f_evt_car_m5m1",     # pre-filing runup (8-K reaction)
+            "advol0": "f_evt_advol",           # abnormal volume on filing day
+            "car_sum4": "f_evt_car_sum4"}
+    ev = ev[["ticker", "target_quarter"] + list(cols)].rename(columns=cols)
+    return panel.merge(ev, on=["ticker", "target_quarter"], how="left")
+
+
+def add_industry_demand(panel, macro_q, macro_lag=1):
+    """Sector-matched industry demand growth (f_ind_*), one column not ten.
+
+    Each row gets the YoY/QoQ growth of the FRED series matched to ITS sector
+    (config.SECTOR_SERIES: autos for Discretionary, semiconductor IP for Tech,
+    oil & gas extraction for Energy, ...). Unlike the pooled mac_* block this
+    varies cross-sectionally (by sector), and unlike generic sector x macro
+    interactions the series actually measures the sector's end demand. Same
+    point-in-time lag convention as the macro block.
+    """
+    if macro_q is None or macro_q.empty:
+        return panel
+    m = macro_q.copy()
+    m["src_q"] = pd.PeriodIndex(pd.to_datetime(m["date"]), freq="Q")
+    m = m.sort_values("src_q").set_index("src_q")
+    rows = []
+    for sector, series in config.SECTOR_SERIES.items():
+        if series not in m.columns:
+            continue
+        s = m[series]
+        rows.append(pd.DataFrame({
+            "sector": sector,
+            "target_quarter": (s.index + macro_lag).astype(str),
+            "f_ind_demand_yoy": s.pct_change(4, fill_method=None).values,
+            "f_ind_demand_qoq": s.pct_change(1, fill_method=None).values,
+        }))
+    if not rows:
+        return panel
+    ind = pd.concat(rows, ignore_index=True)
+    return panel.merge(ind, on=["sector", "target_quarter"], how="left")
+
+
+def add_short_interest_features(panel, si, pub_lag_days=14):
+    """FINRA bi-monthly short interest (f_si_*), point-in-time.
+
+    Short sellers are informed about deteriorating fundamentals months ahead
+    (Akbas et al. 2017), so the level and trend of short positioning is a
+    candidate predictor of revenue misses. FINRA publishes each settlement
+    ~8-10 business days later, so features use the latest settlement at least
+    `pub_lag_days` before the forecast origin. Schema-tolerant: no-ops unless
+    data/short_interest.parquet exists with recognizable columns.
+    """
+    if si is None or si.empty:
+        return panel
+    pos_col = next((c for c in ("currentShortPositionQuantity", "shortInterest",
+                                "shortPositionQuantity") if c in si.columns), None)
+    date_col = next((c for c in ("settlementDate", "settlement_date")
+                     if c in si.columns), None)
+    if pos_col is None or date_col is None or "ticker" not in si.columns:
+        print("[assemble] short_interest present but schema unrecognized - skipped")
+        return panel
+    s = si[["ticker", date_col, pos_col] +
+           (["daysToCoverQuantity"] if "daysToCoverQuantity" in si.columns else [])].copy()
+    s[date_col] = pd.to_datetime(s[date_col])
+    s = (s.sort_values(["ticker", date_col])
+           .drop_duplicates(["ticker", date_col], keep="last"))
+    s[pos_col] = pd.to_numeric(s[pos_col], errors="coerce")
+    # trend: change vs ~1 month (2 settlements) and ~1 quarter (6 settlements) ago
+    g = s.groupby("ticker")[pos_col]
+    s["si_chg_m"] = g.pct_change(2, fill_method=None)
+    s["si_chg_q"] = g.pct_change(6, fill_method=None)
+
+    left = panel.copy()
+    left["si_cutoff"] = pd.to_datetime(left["forecast_origin"]) - pd.Timedelta(days=pub_lag_days)
+    left = left.sort_values(["si_cutoff", "ticker"])
+    s = s.sort_values([date_col, "ticker"]).rename(columns={date_col: "si_date"})
+    out = pd.merge_asof(left, s, left_on="si_cutoff", right_on="si_date",
+                        by="ticker", direction="backward", allow_exact_matches=True)
+    # stale settlements (> 60 days old) carry no current signal
+    stale = (out["si_cutoff"] - out["si_date"]).dt.days > 60
+    if "asof_shares_outstanding" in out.columns:
+        out["f_si_ratio"] = _safe_div(out[pos_col], out["asof_shares_outstanding"])
+    if "daysToCoverQuantity" in out.columns:
+        out["f_si_days_to_cover"] = pd.to_numeric(out["daysToCoverQuantity"], errors="coerce")
+    out["f_si_chg_m"] = out["si_chg_m"]
+    out["f_si_chg_q"] = out["si_chg_q"]
+    si_cols = [c for c in out.columns if c.startswith("f_si_")]
+    out.loc[stale, si_cols] = np.nan
+    drop = ["si_cutoff", "si_date", pos_col, "si_chg_m", "si_chg_q", "daysToCoverQuantity"]
+    return out.drop(columns=[c for c in drop if c in out.columns], errors="ignore")
+
+
 def add_bea_features(panel, bea, quarter_lag=1):
     """Sector value-added from BEA, lagged one quarter (released with a delay)."""
     if bea is None or bea.empty:
@@ -371,9 +509,38 @@ def build_panel(start="2011Q1", feature_lag=1, macro_lag=1, winsor=(0.01, 0.99),
     panel["bl_trailing_mean8"] = panel["f_roll_mean_8"]
     panel["bl_company_hist"] = panel["f_hist_mean"]
 
+    # ANNUAL (TTM) growth target: the year starting at T vs the year ending at
+    # T-1, i.e. ttm[T+3]/ttm[T-1] - 1. Features stay as-of T-1 (same convention
+    # as the quarterly target). The label spans quarters T..T+3, so honest
+    # walk-forward evaluation must PURGE training origins whose window overlaps
+    # the test origin (evaluate.walk_forward purge_quarters=3). ttm_revenue is
+    # a rolling 4-quarter sum on the gap-free grid, so any missing quarter
+    # blanks the annual figure rather than corrupting it.
+    ann_parts = []
+    for tk, g in clean.groupby("ticker"):
+        g = g.sort_values("cq")
+        ttm = g["ttm_revenue"]
+        ann = ttm.shift(-3) / ttm.shift(1) - 1.0
+        ann_prev = ttm.shift(1) / ttm.shift(5) - 1.0     # last realized TTM YoY
+        ann_parts.append(pd.DataFrame({
+            "ticker": tk, "cq": g["cq"], "revenue_annual_target": ann,
+            "bl_ann_persistence": ann_prev,
+            "bl_ann_company_hist": ann_prev.expanding(min_periods=2).mean(),
+        }))
+    ann_df = pd.concat(ann_parts, ignore_index=True)
+    for c in ("revenue_annual_target", "bl_ann_persistence"):
+        ann_df.loc[(ann_df[c] <= YOY_LO) | (ann_df[c] >= YOY_HI), c] = np.nan
+    panel = panel.merge(ann_df, on=["ticker", "cq"], how="left")
+    panel["bl_ann_sector_median"] = (
+        panel.groupby(["sector", "target_quarter"])["bl_ann_persistence"]
+        .transform("median"))
+
     panel = add_sector_features(panel)
     panel["bl_sector_median"] = panel["f_sector_yoy_median"]
     panel = add_macro_features(panel, _load("macro_quarterly"), macro_lag=macro_lag)
+    panel = add_industry_demand(panel, _load("macro_quarterly"), macro_lag=macro_lag)
+    panel = add_filing_event_features(panel, _load("filing_event_study"),
+                                      feature_lag=feature_lag)
     if with_market:
         panel = add_market_features(panel, _load("prices_daily"),
                                     _load("risk_daily"), _load("benchmarks_daily"))
@@ -383,12 +550,14 @@ def build_panel(start="2011Q1", feature_lag=1, macro_lag=1, winsor=(0.01, 0.99),
         panel = add_bea_features(panel, _load("bea_sector_quarterly"), quarter_lag=macro_lag + 1)
     if with_guidance:
         panel = add_guidance_features(panel, _load("company_guidance_normalized"))
+    panel = add_short_interest_features(panel, _load("short_interest"))
 
     # winsorize heavy-tailed FEATURE ratios only (never the target).
     ratio_cols = [c for c in panel.columns
-                  if c.startswith(("f_m_", "mac_")) or c in (
+                  if c.startswith(("f_m_", "mac_", "f_acct_")) or c in (
                       "f_asset_turnover", "mkt_ps_ratio", "mkt_ev_to_rev",
                       "mkt_ret_63", "mkt_ret_126", "f_yoy_z")]
+    ratio_cols = [c for c in ratio_cols if c != "f_acct_ma_recent"]  # 0/1 flag
     panel = _winsorize(panel, ratio_cols, *winsor)
 
     panel = panel[panel["target_q"] >= pd.Period(start, freq="Q")]
@@ -403,12 +572,23 @@ def build_panel(start="2011Q1", feature_lag=1, macro_lag=1, winsor=(0.01, 0.99),
     return panel
 
 
-def feature_columns(panel):
+# Blocks outside the default model set (pass experimental=True to include):
+# f_evt_/f_ind_ were ablated with zero-to-negative out-of-sample lift
+# (MODELING.md §3f); f_si_ (short interest) and f_est_ (analyst estimates) are
+# not-yet-tested candidates that must pass `macro_stages --stage blocks`
+# before promotion. Production metrics track proven features only.
+EXPERIMENTAL_PREFIXES = ("f_evt_", "f_ind_", "f_si_", "f_est_")
+
+
+def feature_columns(panel, experimental=False):
     """Model feature columns: engineered f_*, macro mac_*, market mkt_*, BEA bea_*."""
     pref = ("f_", "mac_", "mkt_", "bea_")
     drop = {"f_quarter"}
-    return [c for c in panel.columns
+    cols = [c for c in panel.columns
             if c.startswith(pref) and c not in drop and not c.startswith("asof_")]
+    if not experimental:
+        cols = [c for c in cols if not c.startswith(EXPERIMENTAL_PREFIXES)]
+    return cols
 
 
 def _write_audits(panel, clean, tickers):

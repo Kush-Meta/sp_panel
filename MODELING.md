@@ -169,6 +169,227 @@ calibration wrapper would restore nominal coverage and is the recommended next s
 for production use. Outputs: `model_quantile_calibration.csv`,
 `model_quantile_predictions.parquet`, `model_guidance_ablation.csv`.
 
+## 3c. Mixture-of-experts gate (tested, not adopted)
+
+`sp_panel/moe.py` prototypes a feature-gated MoE: three block experts (company /
+macro / sector), blended by a softmax gate conditioned on company context (size,
+growth volatility, sector, and each expert's trailing per-company accuracy), trained
+walk-forward and leakage-free. Head-to-head on identical rows:
+
+| method | RMSE | R² | dir. acc |
+|---|---:|---:|---:|
+| monolithic full | **0.193** | 0.437 | 0.823 |
+| company expert alone | 0.195 | 0.430 | 0.819 |
+| global static stack | 0.195 | 0.426 | 0.820 |
+| MoE gate | 0.199 | 0.402 | 0.813 |
+| macro expert alone | 0.247 | 0.079 | 0.719 |
+
+**The gate underperforms** the monolithic model and even a static stack. Why: the
+company block alone ≈ the full model (the macro/sector experts are weak and
+redundant), so there is nothing to arbitrate; learned weights are near-uniform
+(per-company volatility 0.03) and the gate helps the two noisiest sectors slightly
+while hurting the stable ones. Trees already do conditional weighting internally,
+and a gate cannot see the cross-block interactions a monolithic model exploits.
+
+The architecture is sound but **starved of differentiated signal** on this feature
+set — it's the right thing to revisit once the experts are individually strong and
+genuinely complementary (alt-data demand signals, segment revenue, analyst
+consensus). Run: `python -m sp_panel.moe`.
+
+## 3d. Macro ablation: does the `mac_*` block earn its place?
+
+Feature-importance percentages cannot answer "should we include macro?" — macro
+has no cross-sectional variation (every company sees the same CPI), so its
+effective sample is the ~50 test *quarters*, not the ~4,500 company-quarters, and
+tree importances structurally under-weight it. The honest instrument is a paired
+ablation: one fixed model (LightGBM), identical walk-forward, three feature sets —
+**A** `no_macro`, **B** `with_macro`, **C** `macro_only` (+ sector one-hot). B−A is
+paired row-by-row, collapsed to per-quarter mean loss differentials (errors within
+a quarter share the common shock, so the quarter is the unit of independent
+evidence), and tested with a Diebold–Mariano / Newey–West t-test (HLN-corrected).
+
+Run: `python -m sp_panel.evaluate --macro-ab-only` (also runs inside the full
+evaluate; skip with `--no-macro-ab`). Inputs were upgraded first: `FRED_START`
+1990 (fills 2011–2014 macro that was previously NaN and gives transforms decades
+of context), redundant `_qvar` columns dropped, and `hy_spread` replaced by
+`baa_spread` (BAA10Y) because the keyless FRED CSV endpoint caps the licensed ICE
+BofA series at ~3 years of history.
+
+Result (2026-07, 49 test quarters, 4,529 paired forecasts):
+
+| config | RMSE | R² | dir. acc |
+|---|---:|---:|---:|
+| no_macro (A) | 0.1918 | 0.418 | **0.826** |
+| with_macro (B) | **0.1907** | **0.424** | 0.824 |
+| macro_only (C) | 0.2358 | 0.120 | 0.738 |
+
+- **B−A is positive but insignificant**: mean quarterly ΔSE +0.0004, DM p = 0.43,
+  macro better in only 24/49 quarters; directional accuracy is *slightly worse*.
+- **The gain is regime-concentrated**: ~91% of the net improvement comes from a
+  single quarter (2021Q2, the COVID base-effect rebound), with the rest of the
+  positive delta in the 2022–2023Q1 inflation/rate-shock quarters (+0.008 RMSE
+  in 2021 and 2022). In normal years macro is a coin flip or a small drag.
+- **C beats naive baselines but not persistence** (0.236 vs 0.229): common-shock
+  information alone is worth something, but less than a firm's own last YoY.
+
+**Verdict: macro is tail insurance, not a steady-state improvement.** Keep the
+block (it is nearly free, and it pays at turning points exactly when forecasts
+matter most), but do not expect average-accuracy gains. Note FRED serves revised
+(not vintage) data, which flatters macro; the "insignificant on average" verdict
+is therefore conservative.
+Outputs: `model_macro_ablation{,_tests,_by_year,_quarterly}.csv`.
+
+## 3e. Which macro features, and where (Stages 3–4)
+
+`python -m sp_panel.macro_stages` (same protocol as §3d: one fixed LightGBM,
+identical walk-forward splits, paired forecasts, quarter-clustered DM tests).
+
+**Stage 3a — themes, added one at a time to the no-macro base.** Grouping the 25
+`mac_*` columns into 5 economically coherent themes stops collinear dilution:
+
+| theme (added alone) | ΔRMSE | DM p | verdict |
+|---|---:|---:|---|
+| activity_demand (retail, INDPRO, sentiment, unemployment) | +0.0015 | 0.33 | best, insignificant |
+| risk_credit (VIX, Baa spread) | +0.0010 | 0.29 | weak positive |
+| commodities_fx (oil, USD) | +0.0004 | 0.70 | ~nothing |
+| inflation (CPI, core PCE) | −0.0003 | 0.86 | nothing |
+| rates_curve (FF, USTs, slope) | −0.0011 | 0.11 | borderline **hurts** |
+
+Rates/curve *levels* trend, so walk-forward trees extrapolate them badly — if the
+block is slimmed, drop these first. **Stage 3b** (LASSO of the no-macro model's
+per-quarter mean residual — the missed common shock — on standardized macro)
+corroborates: it selects a single variable, `mac_retail_sales_qoq`, with a tiny
+coefficient. The macro information the firm features miss is (barely) demand
+momentum, not rates or inflation.
+
+**Stage 4a — the pooled macro delta by sector** confirms the theoretical ordering:
+cyclical sectors gain (Energy +0.0090, Consumer Discretionary +0.0047 p=0.10 —
+the only sector <0.10), defensive/idiosyncratic sectors pay a small noise tax
+(Industrials −0.0036 p=0.07, Real Estate −0.0047, Staples −0.0025). The
+near-zero pooled average of §3d is opposite-signed sector effects cancelling.
+
+**Stage 4b — explicit sector×macro interactions** (6 theme representatives ×
+sector dummies, added to the full model): ALL +0.0007 (p=0.41). Energy improves
++0.0062 (p=0.15) — the oil×Energy channel is real but sub-significant — while
+Technology worsens. Depth-4 trees with sector one-hots already capture what
+little interaction structure exists.
+
+**Stage 4c — sector-specialist models** (same features/hyperparameters, trained
+per sector, compared to the pooled model on identical rows): **specialists lose
+in all 10 sectors** and significantly overall (RMSE 0.207 vs 0.194, ΔRMSE
+−0.0131, DM p = 0.014; directional accuracy −3.9pp; significant individual
+losses in Financials p=0.02, Industrials p=0.03, Technology p=0.03). Even
+Energy's specialist loses (−0.0014). With ~10 tickers/sector, specialists train
+on ~150–500 rows vs the pooled model's up-to-5,000; the cross-sector cyclical
+structure the pooled model borrows is worth far more than sector purity costs.
+This triangulates with the MoE result (§3c): three architectures — hard split,
+learned gate, explicit interactions — all fail to beat one pooled model at this
+data scale. Revisit specialists only with ~5× more names per sector (full S&P
+500) or genuinely sector-specific features (commodity curves, same-store sales,
+loan-growth data).
+
+Outputs: `macro_stage3_{themes,residual_lasso}.csv`,
+`macro_stage4_{by_sector,interactions,sector_models}.csv`.
+
+## 3f. New feature blocks: accounting, filing-event CARs, industry demand
+
+Three literature-motivated blocks were built and ablated
+(`python -m sp_panel.macro_stages --stage blocks`, same paired quarter-clustered
+protocol; base = current model without the block):
+
+- **accounting** (`f_acct_*`): deferred-revenue change/level (leads future
+  sales), receivables-vs-revenue growth gap (Sloan-style red flag), goodwill
+  jump + trailing M&A flag (marks inorganic YoY). New XBRL concepts
+  `deferred_revenue`/`receivables`/`goodwill` extracted from the already-cached
+  companyfacts. Coverage 42–100% of rows.
+- **filing_event** (`f_evt_*`): CARs and abnormal volume around the T−1
+  report's filing from `filing_event_study.parquet` (PEAD-motivated; the
+  earnings 8-K precedes the 10-Q by a median 2 days here, so the −5..+5 window
+  spans the announcement). Coverage ~52%.
+- **industry_demand** (`f_ind_*`): sector-matched FRED demand growth (autos →
+  Discretionary, semiconductor IP → Tech, oil & gas extraction → Energy, C&I
+  loans → Financials, ...; `config.SECTOR_SERIES`), one cross-sectionally
+  varying column instead of ten pooled ones.
+
+Result (49 quarters, ~4,525 paired forecasts, LightGBM):
+
+| block | ΔRMSE | DM p | verdict |
+|---|---:|---:|---|
+| accounting | +0.0003 | 0.73 | flat; best in Energy (+0.0061) |
+| short_interest | −0.0005 | 0.37 | no lift (see below) |
+| industry_demand | −0.0010 | 0.17 | no lift |
+| filing_event | −0.0012 | 0.12 | borderline drag |
+| all four | +0.0001 | 0.88 | nothing |
+
+**Short interest** (`f_si_*`: SI/shares, days-to-cover, 1m/1q positioning
+change; FINRA `ConsolidatedShortInterest` via `--short`, bi-monthly with a
+14-day publication lag) deserves its own note because the literature prior was
+strongest. The FINRA API only has history from ~2018, so the block was retested
+on its covered window: 2018Q1+ ΔRMSE −0.0009 (p = 0.34, better in 15/33
+quarters, dir-acc −0.75pp) — no lift even where the data exists
+(`feature_blocks_si_2018.csv`). Per sector it drags nearly everywhere
+(Comm Svcs −0.0021 p=0.07, Cons Disc −0.0030 p=0.09); only Technology (+0.0030,
+n.s.) leans positive. Plausible reading: shorts predict *misses* for the
+troubled tail of the market, and this 100-name mega-cap universe has too few
+such names for the signal to pay for its noise. Data-quality gotcha: FINRA's
+`EquityShortInterest` dataset, despite the name, is OTC-only and silently
+returns zero rows for listed tickers — `short_interest.py` now uses
+`ConsolidatedShortInterest`.
+
+**None earn a place.** The information they carry is largely subsumed: the
+model already sees T−1's actual revenue surprise directly (lag/accel features),
+so the announcement CAR adds only the market's read *beyond* the numbers;
+deferred revenue tracks the revenue trajectory already encoded in the lag
+ladder; industry demand overlaps sector LOO aggregates and BEA value-added.
+Default feature set therefore **keeps `f_acct_*`** (only positive block, and
+the M&A flag has data-hygiene value) and **excludes `f_evt_*`/`f_ind_*`**
+(`assemble.EXPERIMENTAL_PREFIXES`; pass `feature_columns(panel,
+experimental=True)` to re-test). Honest-negative caveats: CAR coverage is only
+~52% and starts 2013Q4; a denser announcement-dated feed (8-K based) could be
+retested. Outputs: `feature_blocks_ablation.csv`, `feature_blocks_by_sector.csv`.
+
+Still missing (requires ALPHAVANTAGE_API_KEY, parked for now): sell-side
+estimate revisions (`--av-estimates`) — the one untested block with a strong
+prior; wire as `f_est_*` (prefix already reserved in `EXPERIMENTAL_PREFIXES`
+and `macro_stages.NEW_BLOCKS`) and re-run `--stage blocks` when the parquet
+exists.
+
+## 3g. Annual (TTM) growth target
+
+`revenue_annual_target` = the year starting at T vs the year ending at T−1
+(`ttm[T+3]/ttm[T−1] − 1`), features as-of T−1 as usual. Because the label spans
+T..T+3, walk-forward training is **purged** (train only on origins whose label
+window closed before the test origin; `walk_forward(purge_quarters=3)`), and
+DM tests use Newey–West lags = 4 (overlapping windows). Annual baselines:
+TTM-growth persistence / expanding company mean / sector median. Run:
+`python -m sp_panel.evaluate --annual` (outputs `*_annual.csv`).
+
+Results (47 test quarters, ~4,040 forecasts): annual growth is much harder —
+best model RandomForest RMSE 0.227, R² 0.12, dir-acc 0.76 (vs R² 0.44
+quarterly), beating the best baseline by 6.7%. Notably the baseline hierarchy
+flips: quarterly persistence is nearly unbeatable per-quarter but is the WORST
+annual baseline (R² −0.81); the expanding grand mean is the best naive rule —
+at a 1-year horizon, mean reversion dominates persistence. Boosting's edge
+also fades (RF > ensemble > GBMs): with a noisier target, variance reduction
+beats sequential bias-chasing.
+
+**Macro finally clears significance at this horizon** (`macro_annual_*.csv`):
+the full block is still ~0 pooled (+0.0007, p=0.60, dir-acc +1.2pp), but
+- **activity_demand added alone: +0.0024 RMSE, DM p = 0.044**, better in 29/47
+  quarters, dir-acc +1.7pp — the demand-momentum theme (INDPRO, retail sales,
+  unemployment, sentiment) is genuinely predictive one year out;
+- **inflation actively hurts: −0.0019, p = 0.034**; rates_curve levels also
+  negative (−0.0013) — same nonstationarity problem as the quarterly horizon;
+- **Energy is the first sector with significant macro value: +0.0061,
+  p = 0.043** (30/46 quarters), with the other cyclicals (Cons Disc +0.0045,
+  Materials +0.0043, Health Care +0.0036) consistently positive.
+
+Recommended annual-model macro config: keep activity_demand (and harmless
+risk_credit), drop inflation and rates-level columns. Tree importance broadly
+agrees on activity (INDPRO alone = 21% of macro gain) but also ranks USD/WTI
+highly even though the commodities theme ablates to ~0 — one more reminder
+that importance ≠ incremental value.
+
 ## 4. Should you use / fine-tune an LLM?
 
 **No, not for the prediction.** This is a structured-numeric forecasting problem;
@@ -203,5 +424,7 @@ guidance/expectations benchmark (§3b).
   large residual variance remains.
 - The fixed 1-quarter feature lag is conservative; a true post-earnings nowcast
   would likely score higher.
-- Macro features begin in 2014 (FRED pull start); BEA is extra-lagged for
-  point-in-time safety.
+- Macro history now starts in 1990 (`FRED_START`), so every panel row has full
+  macro coverage; BEA is extra-lagged for point-in-time safety. FRED serves
+  *revised* macro values, not real-time vintages — this flatters macro features
+  slightly, so a negative macro-ablation verdict (§3d) is conservative evidence.

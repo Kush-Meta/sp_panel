@@ -70,7 +70,13 @@ def _fetch_via_csv(series_id: str, start: str) -> pd.DataFrame:
 
 
 def _fetch_series(series_id: str, start: str, refresh: bool = False):
-    cache = config.CACHE_DIR / f"fred_{series_id}.csv"
+    # The start date is part of the cache key: changing config.FRED_START must
+    # invalidate caches fetched with a shorter history, and a series that simply
+    # begins later than `start` (e.g. broad USD in 2006) must NOT refetch forever.
+    cache = config.CACHE_DIR / f"fred_{series_id}_{start}.csv"
+    legacy = config.CACHE_DIR / f"fred_{series_id}.csv"
+    if legacy.exists():
+        legacy.unlink()
     if refresh and cache.exists():
         cache.unlink()
     if cache.exists():
@@ -108,9 +114,11 @@ def fetch_macro(refresh: bool = False) -> pd.DataFrame:
 def to_quarterly(macro_daily: pd.DataFrame) -> pd.DataFrame:
     """Resample to quarter-end.
 
-    Keeps last-of-quarter levels plus quarter averages, within-quarter standard
-    deviations and variances. The volatility/variance columns matter most for
-    daily financial-condition series such as WTI, VIX, USD and rates.
+    Keeps last-of-quarter levels plus quarter averages and within-quarter
+    standard deviations (variance was dropped: it is just std**2, pure
+    redundancy that dilutes feature-importance attribution). The volatility
+    columns matter most for daily financial-condition series such as WTI,
+    VIX, USD and rates.
     """
     m = macro_daily.copy()
     m["date"] = pd.to_datetime(m["date"])
@@ -118,8 +126,7 @@ def to_quarterly(macro_daily: pd.DataFrame) -> pd.DataFrame:
     q_last = m.resample("QE").last()
     q_avg = m.resample("QE").mean().add_suffix("_qavg")
     q_std = m.resample("QE").std().add_suffix("_qstd")
-    q_var = m.resample("QE").var().add_suffix("_qvar")
-    out = q_last.join(q_avg).join(q_std).join(q_var)
+    out = q_last.join(q_avg).join(q_std)
 
     if {"ust_10y", "ust_2y"}.issubset(out.columns):
         out["yield_curve_10y2y"] = out["ust_10y"] - out["ust_2y"]

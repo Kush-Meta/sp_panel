@@ -136,12 +136,23 @@ CONCEPTS = {
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment"],
     "buybacks": ["PaymentsForRepurchaseOfCommonStock"],
     "dep_amort": ["DepreciationDepletionAndAmortization", "DepreciationAmortizationAndAccretionNet"],
+    # Accounting leading indicators (instant). Deferred revenue / contract
+    # liabilities lead future sales (money collected for undelivered goods);
+    # receivables growing faster than revenue is the classic Sloan-style red
+    # flag; a goodwill jump is an unambiguous "acquisition closed" marker used
+    # to separate inorganic from organic growth. Current portions preferred so
+    # the scale matches near-term revenue.
+    "deferred_revenue": ["ContractWithCustomerLiabilityCurrent", "DeferredRevenueCurrent",
+                         "ContractWithCustomerLiability", "DeferredRevenue"],
+    "receivables": ["AccountsReceivableNetCurrent", "ReceivablesNetCurrent"],
+    "goodwill": ["Goodwill"],
 }
 
 # Concepts measured at an instant (balance sheet) vs over a period (flows).
 INSTANT_CONCEPTS = {
     "assets", "assets_current", "liabilities", "liabilities_current", "equity",
     "cash", "long_term_debt", "inventory", "shares_outstanding",
+    "deferred_revenue", "receivables", "goodwill",
 }
 
 # ---------------------------------------------------------------------------
@@ -167,7 +178,45 @@ FRED_SERIES = {
     "usd_index": "DTWEXBGS",          # Broad USD index (daily)
     "wti_oil": "DCOILWTICO",          # WTI crude (daily)
     "vix": "VIXCLS",                  # CBOE VIX (daily)
-    "hy_spread": "BAMLH0A0HYM2",      # ICE BofA US high yield OAS (daily)
+    # Credit spread: BAA10Y instead of ICE BofA HY OAS (BAMLH0A0HYM2) because
+    # the keyless fredgraph.csv endpoint caps that licensed series at ~3 years
+    # of history regardless of the requested start. Baa-over-10Y tracks HY OAS
+    # closely and has full daily history from 1990. (With FRED_API_KEY set, the
+    # HY OAS could be restored.)
+    "baa_spread": "BAA10Y",           # Moody's Baa corporate minus 10Y UST (daily)
+    # --- sector-matched industry demand (feeds f_ind_* via SECTOR_SERIES, not
+    # the pooled mac_* block). Stage-4 lesson: generic sector x macro
+    # interactions add nothing, but a demand series matched to the sector's
+    # actual product is a sharper, cross-sectionally varying instrument.
+    "auto_sales": "TOTALSA",          # light vehicle sales SAAR (monthly)
+    "ip_semis": "IPG3344S",           # IP: semiconductors & components (monthly)
+    "ip_oil_gas": "IPG211S",          # IP: oil & gas extraction (monthly)
+    "durable_orders": "DGORDER",      # durable goods new orders (monthly, 1992+)
+    "ci_loans": "BUSLOANS",           # commercial & industrial loans (monthly)
+    "construction_spend": "TTLCONS",  # total construction spending (monthly, 1993+)
+    "pce_nondurable": "PCEND",        # PCE: nondurable goods (monthly)
+    "pce_services": "PCESV",          # PCE: services (quarterly)
+    "pce_health": "DHLCRC1Q027SBEA",  # PCE: health care services (quarterly)
 }
 
-FRED_START = "2014-01-01"
+# sector -> FRED_SERIES key whose growth proxies that sector's end demand.
+# Housing starts (already in FRED_SERIES) covers residential; REIT-heavy Real
+# Estate and Materials both lean on construction spending.
+SECTOR_SERIES = {
+    "Consumer Discretionary": "auto_sales",
+    "Technology": "ip_semis",
+    "Energy": "ip_oil_gas",
+    "Industrials": "durable_orders",
+    "Financials": "ci_loans",
+    "Materials": "construction_spend",
+    "Real Estate": "construction_spend",
+    "Consumer Staples": "pce_nondurable",
+    "Communication Services": "pce_services",
+    "Health Care": "pce_health",
+}
+
+# Pull long macro history even though the SEC panel starts ~2011: trailing
+# z-scores / cycle-state transforms need decades of context, it fills the
+# 2011-2014 panel rows that were previously NaN, and FRED is free. Some series
+# simply start later (broad USD 2006, HY OAS 1996) and arrive as-available.
+FRED_START = "1990-01-01"

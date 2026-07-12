@@ -32,12 +32,17 @@ Outputs (data/):
   model_metrics_by_company.csv
   model_predictions.parquet     per (model, ticker, quarter) walk-forward preds
   model_feature_importance.csv  LightGBM gain importance (full-sample fit)
+  model_macro_ablation.csv           macro A/B/C config-level metrics
+  model_macro_ablation_tests.csv     quarter-clustered Diebold–Mariano tests
+  model_macro_ablation_by_year.csv   with/without-macro deltas per year
+  model_macro_ablation_quarterly.csv per-quarter loss differentials (for later stages)
 """
 import argparse
 import warnings
 
 import numpy as np
 import pandas as pd
+from scipy import stats as scipy_stats
 
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -144,28 +149,45 @@ BASELINE_COLS = {
     "sector_median": "bl_sector_median",
 }
 
+# Annual (TTM) horizon: target spans quarters T..T+3, baselines are the
+# annual-growth analogues built in assemble.build_panel.
+ANNUAL_TARGET = "revenue_annual_target"
+ANNUAL_BASELINE_COLS = {
+    "persistence": "bl_ann_persistence",
+    "company_hist": "bl_ann_company_hist",
+    "sector_median": "bl_ann_sector_median",
+}
+
 
 def walk_forward(panel, feat_cols, models, warmup_quarters=12, min_train=400,
-                 ensemble=True):
-    d = panel[panel[TARGET].notna()].copy().reset_index(drop=True)
+                 ensemble=True, target=None, baseline_cols=None, purge_quarters=0):
+    """Expanding walk-forward. `purge_quarters` matters for multi-quarter
+    targets: an annual label at origin T covers T..T+3, so training for test
+    origin q must exclude origins whose label window is not fully realized
+    before q (train on target_q < q - purge_quarters) or the evaluation
+    leaks future revenue into training labels."""
+    target = target or TARGET
+    baseline_cols = BASELINE_COLS if baseline_cols is None else baseline_cols
+    d = panel[panel[target].notna()].copy().reset_index(drop=True)
     X_all, _ = design_matrix(d, feat_cols)
     quarters = sorted(d["target_q"].unique())
     test_quarters = quarters[warmup_quarters:]
 
     rows = []
     for qi, q in enumerate(test_quarters, 1):
-        tr = (d["target_q"] < q).values
+        tr = (d["target_q"] < q - purge_quarters).values
         te = (d["target_q"] == q).values
         if tr.sum() < min_train or te.sum() == 0:
             continue
         Xtr = X_all[tr]
-        ytr = d.loc[tr, TARGET].values
+        ytr = d.loc[tr, target].values
         Xte = X_all[te]
-        base = d.loc[te, ["ticker", "sector", "target_quarter", TARGET]].reset_index(drop=True)
-        base = base.rename(columns={TARGET: "y_true"})
+        base = d.loc[te, ["ticker", "sector", "target_quarter", target]].reset_index(drop=True)
+        base = base.rename(columns={target: "y_true"})
 
         # baselines (precomputed causal columns; fall back to expanding mean)
-        bl = {name: d.loc[te, col].values for name, col in BASELINE_COLS.items()}
+        bl = {name: d.loc[te, col].values for name, col in baseline_cols.items()
+              if col in d.columns}
         bl["expanding_mean"] = np.full(te.sum(), ytr.mean())
         for name, pred in bl.items():
             r = base.copy()
@@ -310,15 +332,16 @@ def old_suite_best():
     }])
 
 
-def feature_importance(panel, feat_cols):
+def feature_importance(panel, feat_cols, target=None):
     if not HAS_LGBM:
         return pd.DataFrame()
-    d = panel[panel[TARGET].notna()]
+    target = target or TARGET
+    d = panel[panel[target].notna()]
     X, cols = design_matrix(d, feat_cols)
     mdl = LGBMRegressor(n_estimators=500, learning_rate=0.03, num_leaves=15,
                         max_depth=4, min_child_samples=20, subsample=0.8,
                         subsample_freq=1, colsample_bytree=0.8, reg_lambda=1.0,
-                        random_state=0, n_jobs=-1, verbose=-1).fit(X, d[TARGET].values)
+                        random_state=0, n_jobs=-1, verbose=-1).fit(X, d[target].values)
     imp = pd.DataFrame({"feature": cols, "gain": mdl.booster_.feature_importance("gain")})
     imp["gain_pct"] = 100 * imp["gain"] / imp["gain"].sum()
     return imp.sort_values("gain", ascending=False).reset_index(drop=True)
@@ -347,33 +370,199 @@ def guidance_ablation(panel, feat_cols, warmup=12, min_train=400):
     return out
 
 
+# ---------------------------------------------------------------------------
+# Macro ablation (Stage 2 of the macro-inclusion analysis)
+# ---------------------------------------------------------------------------
+def _dm_test(d, hac_lags=None):
+    """Diebold–Mariano test on a per-quarter loss-differential series.
+
+    ``d`` holds ONE value per test quarter: the loss differential already
+    averaged across companies within that quarter. This is what "cluster by
+    quarter" means here — forecast errors within a quarter share the common
+    macro shock, so the unit of independent evidence is the quarter, not the
+    ~100 company rows inside it. A row-level t-test would overstate the sample
+    by two orders of magnitude.
+
+    The mean differential is tested with a Newey–West (Bartlett kernel)
+    long-run variance to absorb serial correlation across quarters, the
+    Harvey–Leybourne–Newbold small-sample correction, and Student-t p-values
+    on T-1 degrees of freedom. Returns (stat, p_value, T).
+    """
+    d = np.asarray(d, float)
+    d = d[~np.isnan(d)]
+    T = len(d)
+    if T < 8:
+        return np.nan, np.nan, T
+    dbar = d.mean()
+    if hac_lags is None:
+        hac_lags = int(np.floor(T ** (1 / 3)))
+    gamma0 = ((d - dbar) ** 2).mean()
+    lrv = gamma0
+    for k in range(1, min(hac_lags, T - 1) + 1):
+        w = 1 - k / (hac_lags + 1)
+        lrv += 2 * w * ((d[k:] - dbar) * (d[:-k] - dbar)).mean()
+    lrv = max(lrv, 1e-12)
+    stat = dbar / np.sqrt(lrv / T)
+    stat *= np.sqrt((T - 1) / T)                      # HLN correction, h=1
+    p = 2 * scipy_stats.t.sf(abs(stat), df=T - 1)
+    return float(stat), float(p), T
+
+
+def macro_ablation(panel, feat_cols, warmup=12, min_train=400, model_name=None):
+    """Does the mac_* block earn its place OUT OF SAMPLE? (feature-importance
+    percentages cannot answer that — this paired ablation can.)
+
+    Three walk-forward runs of one fixed model that differ only in features:
+      no_macro    everything except mac_*                             (A)
+      with_macro  the full feature set                                (B)
+      macro_only  mac_* + sector one-hot — the ceiling of what
+                  common-shock information alone predicts             (C)
+
+    The decision statistic is B vs A, paired row-by-row on identical
+    (ticker, quarter) forecasts, reduced to per-quarter mean loss
+    differentials, and tested with the quarter-clustered DM test above.
+    Deltas are oriented so POSITIVE = macro helped.
+
+    Returns (summary, tests, by_year, per_quarter) DataFrames.
+    """
+    macro_cols = [c for c in feat_cols if c.startswith("mac_")]
+    if not macro_cols:
+        print("[macro_ab] no mac_* columns in the panel; skipping")
+        return (pd.DataFrame(),) * 4
+    if model_name is None:
+        model_name = "lightgbm" if HAS_LGBM else "hist_gbm"
+    configs = {
+        "no_macro": [c for c in feat_cols if not c.startswith("mac_")],
+        "with_macro": list(feat_cols),
+        "macro_only": macro_cols,
+    }
+    runs, baselines = {}, None
+    for label, cols in configs.items():
+        print(f"[macro_ab] walk-forward: {label} ({len(cols)} features)")
+        preds = walk_forward(panel, cols, {model_name: make_models([model_name])[model_name]},
+                             warmup_quarters=warmup, min_train=min_train, ensemble=False)
+        runs[label] = preds[preds["model"] == model_name].reset_index(drop=True)
+        if baselines is None:                     # identical across configs
+            baselines = preds[preds["model"].str.startswith("baseline:")]
+
+    summary = pd.DataFrame(
+        [{"config": label, "model": model_name, "n_features": len(configs[label]),
+          **_metrics(runs[label])} for label in configs]
+        + [{"config": m, "model": "-", "n_features": 0, **_metrics(g)}
+           for m, g in baselines.groupby("model")])
+
+    # --- pair A and B on identical forecast rows ---------------------------
+    key = ["ticker", "target_quarter"]
+    m = runs["no_macro"][key + ["y_true", "y_pred"]].merge(
+        runs["with_macro"][key + ["y_pred"]], on=key, suffixes=("_a", "_b"))
+    ea, eb = m["y_true"] - m["y_pred_a"], m["y_true"] - m["y_pred_b"]
+    m["d_se"] = ea ** 2 - eb ** 2                                    # >0: macro helped
+    m["d_ae"] = ea.abs() - eb.abs()
+    m["d_hit"] = ((np.sign(m["y_true"]) == np.sign(m["y_pred_b"])).astype(float)
+                  - (np.sign(m["y_true"]) == np.sign(m["y_pred_a"])).astype(float))
+    per_q = m.groupby("target_quarter")[["d_se", "d_ae", "d_hit"]].mean().sort_index()
+
+    tests = []
+    for loss, col in [("squared_error", "d_se"), ("abs_error", "d_ae"),
+                      ("dir_acc", "d_hit")]:
+        d = per_q[col].values
+        stat, p, T = _dm_test(d)
+        tests.append({
+            "loss": loss, "mean_quarterly_delta": float(np.mean(d)),
+            "dm_stat": stat, "p_value": p, "n_quarters": T,
+            "quarters_macro_better": int((d > 0).sum()),
+            # >0.5 means one quarter carries most of the net gain (regime
+            # concentration); >1 means the rest of the sample nets negative.
+            "share_from_best_quarter": float(d.max() / d.sum()) if d.sum() > 0 else np.nan,
+        })
+    tests = pd.DataFrame(tests)
+
+    m["year"] = m["target_quarter"].str[:4]
+    by_year = []
+    for y, g in m.groupby("year"):
+        ya, yb = g["y_true"] - g["y_pred_a"], g["y_true"] - g["y_pred_b"]
+        by_year.append({
+            "year": y, "n": len(g),
+            "rmse_no_macro": float(np.sqrt((ya ** 2).mean())),
+            "rmse_with_macro": float(np.sqrt((yb ** 2).mean())),
+            "rmse_delta": float(np.sqrt((ya ** 2).mean()) - np.sqrt((yb ** 2).mean())),
+            "dir_acc_delta": float(g["d_hit"].mean()),
+        })
+    return summary, tests, pd.DataFrame(by_year), per_q.reset_index()
+
+
+def run_macro_ablation(panel, feat_cols, warmup=12, min_train=400, model_name=None):
+    """Run the macro ablation, persist the four output tables, print a verdict."""
+    summary, tests, by_year, per_q = macro_ablation(
+        panel, feat_cols, warmup=warmup, min_train=min_train, model_name=model_name)
+    if summary.empty:
+        return summary, tests
+    summary.to_csv(config.DATA_DIR / "model_macro_ablation.csv", index=False)
+    tests.to_csv(config.DATA_DIR / "model_macro_ablation_tests.csv", index=False)
+    by_year.to_csv(config.DATA_DIR / "model_macro_ablation_by_year.csv", index=False)
+    per_q.to_csv(config.DATA_DIR / "model_macro_ablation_quarterly.csv", index=False)
+
+    print("\n=== Macro ablation: walk-forward, one fixed model, mac_* in/out ===")
+    print(summary[["config", "model", "n_features", "n", "mae", "rmse", "r2", "dir_acc"]]
+          .round(4).to_string(index=False))
+    print("\n--- Quarter-clustered Diebold–Mariano tests (positive delta = macro helps) ---")
+    print(tests.round(4).to_string(index=False))
+    print("\n--- With/without-macro deltas by year (positive = macro helps) ---")
+    print(by_year.round(4).to_string(index=False))
+
+    se = tests[tests["loss"] == "squared_error"].iloc[0]
+    helped = se["mean_quarterly_delta"] > 0
+    sig = se["p_value"] < 0.10 if np.isfinite(se["p_value"]) else False
+    concentrated = se["share_from_best_quarter"] > 0.5 if np.isfinite(se["share_from_best_quarter"]) else False
+    verdict = ("macro helps (significant at 10%)" if helped and sig else
+               "macro shows a positive but INSIGNIFICANT delta" if helped else
+               "macro does not improve out-of-sample accuracy")
+    print(f"\nverdict: {verdict} | mean quarterly ΔSE={se['mean_quarterly_delta']:+.5f} "
+          f"p={se['p_value']:.3f} | better in {int(se['quarters_macro_better'])}/{int(se['n_quarters'])} quarters")
+    if helped and concentrated:
+        print("note: >50% of the net gain comes from a single quarter — treat macro as "
+              "tail insurance for turning points, not a steady-state improvement.")
+    return summary, tests
+
+
 def evaluate(panel_path=None, feature_lag=1, warmup=12, min_train=400,
-             start="2011Q1", which=None, quantiles=True, guidance_ab=True):
+             start="2011Q1", which=None, quantiles=True, guidance_ab=True,
+             macro_ab=True, annual=False):
     if panel_path:
         panel = pd.read_parquet(panel_path)
         feat_cols = assemble.feature_columns(panel)
     else:
         panel = assemble.build_panel(start=start, feature_lag=feature_lag)
         feat_cols = assemble.feature_columns(panel)
+    # Annual mode: TTM-growth target spanning T..T+3, annual baselines, purged
+    # training (see walk_forward), "_annual"-suffixed outputs. The quarterly
+    # add-ons (quantiles, guidance/macro A/B) are quarterly-target analyses.
+    target = ANNUAL_TARGET if annual else TARGET
+    baselines = ANNUAL_BASELINE_COLS if annual else BASELINE_COLS
+    purge = 3 if annual else 0
+    sfx = "_annual" if annual else ""
+    if annual:
+        quantiles = guidance_ab = macro_ab = False
     models = make_models(which)
-    print(f"[evaluate] panel rows={len(panel)} labeled={panel[TARGET].notna().sum()} "
-          f"features={len(feat_cols)} (+sector one-hot)")
+    print(f"[evaluate] target={target} purge={purge} | panel rows={len(panel)} "
+          f"labeled={panel[target].notna().sum()} features={len(feat_cols)} (+sector one-hot)")
     print(f"[evaluate] models: {list(models.keys())} | lgbm={HAS_LGBM} xgb={HAS_XGB} cat={HAS_CAT}")
 
-    preds = walk_forward(panel, feat_cols, models, warmup_quarters=warmup, min_train=min_train)
+    preds = walk_forward(panel, feat_cols, models, warmup_quarters=warmup, min_train=min_train,
+                         target=target, baseline_cols=baselines, purge_quarters=purge)
     preds["year"] = preds["target_quarter"].str[:4]
-    preds.to_parquet(config.DATA_DIR / "model_predictions.parquet", index=False)
+    preds.to_parquet(config.DATA_DIR / f"model_predictions{sfx}.parquet", index=False)
 
     overall = score(preds)
-    table = pd.concat([overall, old_suite_best()], ignore_index=True)
+    table = pd.concat([overall] + ([] if annual else [old_suite_best()]), ignore_index=True)
     table = table.sort_values("rmse", na_position="last").reset_index(drop=True)
-    table.to_csv(config.DATA_DIR / "model_metrics_overall.csv", index=False)
-    score_by(preds, "sector").to_csv(config.DATA_DIR / "model_metrics_by_sector.csv", index=False)
-    score_by(preds, "year").to_csv(config.DATA_DIR / "model_metrics_by_year.csv", index=False)
-    score_by(preds, "ticker").to_csv(config.DATA_DIR / "model_metrics_by_company.csv", index=False)
-    fi = feature_importance(panel, feat_cols)
+    table.to_csv(config.DATA_DIR / f"model_metrics_overall{sfx}.csv", index=False)
+    score_by(preds, "sector").to_csv(config.DATA_DIR / f"model_metrics_by_sector{sfx}.csv", index=False)
+    score_by(preds, "year").to_csv(config.DATA_DIR / f"model_metrics_by_year{sfx}.csv", index=False)
+    score_by(preds, "ticker").to_csv(config.DATA_DIR / f"model_metrics_by_company{sfx}.csv", index=False)
+    fi = feature_importance(panel, feat_cols, target=target)
     if not fi.empty:
-        fi.to_csv(config.DATA_DIR / "model_feature_importance.csv", index=False)
+        fi.to_csv(config.DATA_DIR / f"model_feature_importance{sfx}.csv", index=False)
 
     pd.set_option("display.width", 200)
     print("\n=== Walk-forward comparison: models vs baselines (overall) ===")
@@ -397,6 +586,10 @@ def evaluate(panel_path=None, feature_lag=1, warmup=12, min_train=400,
                      ab.loc[ab.config == "without_guidance", "rmse"].iloc[0]
             print(f"guidance RMSE delta: {d_rmse:+.4f} "
                   f"({'helps' if d_rmse < 0 else 'no improvement'}; coverage ~13% of rows)")
+
+    # --- macro A/B/C: marginal value of the mac_* block, quarter-clustered ---
+    if macro_ab:
+        run_macro_ablation(panel, feat_cols, warmup=warmup, min_train=min_train)
 
     # --- quantile intervals (calibrated uncertainty) ---
     if quantiles:
@@ -422,11 +615,31 @@ def main():
                     help="comma list to restrict the model zoo (default: all available)")
     ap.add_argument("--no-quantiles", action="store_true", help="skip quantile interval forecasts")
     ap.add_argument("--no-guidance-ab", action="store_true", help="skip the guidance A/B")
+    ap.add_argument("--no-macro-ab", action="store_true", help="skip the macro ablation")
+    ap.add_argument("--macro-ab-only", action="store_true",
+                    help="run ONLY the macro ablation (skip model zoo / quantiles / guidance)")
+    ap.add_argument("--ab-model", default=None,
+                    help="model used for the macro ablation (default lightgbm)")
+    ap.add_argument("--annual", action="store_true",
+                    help="evaluate the annual (TTM) growth target with purged walk-forward")
     args = ap.parse_args()
     which = [s.strip() for s in args.models.split(",")] if args.models else None
+    if args.macro_ab_only:
+        if args.panel:
+            panel = pd.read_parquet(args.panel)
+        else:
+            panel = assemble.build_panel(start=args.start, feature_lag=args.feature_lag)
+        feat_cols = assemble.feature_columns(panel)
+        print(f"[macro_ab] panel rows={len(panel)} labeled={panel[TARGET].notna().sum()} "
+              f"features={len(feat_cols)} "
+              f"(macro={sum(c.startswith('mac_') for c in feat_cols)})")
+        run_macro_ablation(panel, feat_cols, warmup=args.warmup,
+                           min_train=args.min_train, model_name=args.ab_model)
+        return
     evaluate(panel_path=args.panel, feature_lag=args.feature_lag, warmup=args.warmup,
              min_train=args.min_train, start=args.start, which=which,
-             quantiles=not args.no_quantiles, guidance_ab=not args.no_guidance_ab)
+             quantiles=not args.no_quantiles, guidance_ab=not args.no_guidance_ab,
+             macro_ab=not args.no_macro_ab, annual=args.annual)
 
 
 if __name__ == "__main__":

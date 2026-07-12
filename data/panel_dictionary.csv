@@ -30,6 +30,11 @@ f_m_sga,company_behavior
 f_m_capex,company_behavior
 f_m_cfo,company_behavior
 f_asset_turnover,company_behavior
+f_acct_defrev_chg4,other
+f_acct_defrev_to_rev,other
+f_acct_recv_gap,other
+f_acct_gw_jump,other
+f_acct_ma_recent,other
 asof_ttm_revenue,id
 asof_shares_outstanding,id
 asof_long_term_debt,id
@@ -53,6 +58,10 @@ bl_seasonal,baseline_ref
 bl_trailing_mean4,baseline_ref
 bl_trailing_mean8,baseline_ref
 bl_company_hist,baseline_ref
+revenue_annual_target,other
+bl_ann_persistence,baseline_ref
+bl_ann_company_hist,baseline_ref
+bl_ann_sector_median,baseline_ref
 f_sector_yoy_loo,sector_behavior
 f_sector_yoy_median,sector_behavior
 f_sector_yoy_std,sector_behavior
@@ -70,7 +79,7 @@ mac_ism_pmi_proxy,macro
 mac_retail_sales,macro
 mac_consumer_sentiment,macro
 mac_vix,macro
-mac_hy_spread,macro
+mac_baa_spread,macro
 mac_usd_index,macro
 mac_wti_oil,macro
 mac_cpi_yoy,macro
@@ -83,6 +92,13 @@ mac_wti_oil_yoy,macro
 mac_wti_oil_qoq,macro
 mac_usd_index_yoy,macro
 mac_usd_index_qoq,macro
+f_ind_demand_yoy,other
+f_ind_demand_qoq,other
+f_evt_car_m1p1,other
+f_evt_car_p1p5,other
+f_evt_car_m5m1,other
+f_evt_advol,other
+f_evt_car_sum4,other
 mkt_ret_63,market_risk
 mkt_ret_126,market_risk
 mkt_drawdown_63,market_risk
@@ -102,3 +118,7 @@ f_guid_lower_90d,guidance
 f_guid_days_since_last,guidance
 f_guid_latest_raise,guidance
 f_guid_latest_lower,guidance
+f_si_ratio,other
+f_si_days_to_cover,other
+f_si_chg_m,other
+f_si_chg_q,other
