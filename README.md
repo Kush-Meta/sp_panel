@@ -165,6 +165,4 @@ scaffold:
   full-text search (efts.sec.gov).
 - **Customer / supplier earnings** — require a supply-chain mapping first (10-K major-
   customer disclosures, or a paid SPLC/Revere dataset).
-- **M&A signals** — 8-K items 1.01/2.01 or a news feed.
-
-Say the word and I'll add modules for any of these.
+- **M&A signals** — 8-K items 1.01/2.01 or a news feed
