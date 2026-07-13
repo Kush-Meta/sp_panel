@@ -135,7 +135,8 @@ CONCEPTS = {
             "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment"],
     "buybacks": ["PaymentsForRepurchaseOfCommonStock"],
-    "dep_amort": ["DepreciationDepletionAndAmortization", "DepreciationAmortizationAndAccretionNet"],
+    "dep_amort": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
+                  "DepreciationAmortizationAndAccretionNet"],
     # Accounting leading indicators (instant). Deferred revenue / contract
     # liabilities lead future sales (money collected for undelivered goods);
     # receivables growing faster than revenue is the classic Sloan-style red

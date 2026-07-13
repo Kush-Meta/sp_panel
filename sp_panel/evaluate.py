@@ -158,6 +158,24 @@ ANNUAL_BASELINE_COLS = {
     "sector_median": "bl_ann_sector_median",
 }
 
+# Every runnable target: (target column, baseline columns, purge quarters,
+# output-file suffix). All T..T+3 targets need purge_quarters=3 — see
+# walk_forward. Margin targets predict the LEVEL of next year's TTM margin;
+# sign-based dir_acc is uninformative there (margins are almost always
+# positive) — judge them by MAE/RMSE/R2 vs the persistence baseline.
+TARGET_SPECS = {
+    "quarterly": (TARGET, BASELINE_COLS, 0, ""),
+    "annual": (ANNUAL_TARGET, ANNUAL_BASELINE_COLS, 3, "_annual"),
+    "gross-margin": ("gm_annual_target",
+                     {"persistence": "bl_gm_persistence",
+                      "company_hist": "bl_gm_company_hist",
+                      "sector_median": "bl_gm_sector_median"}, 3, "_gm_annual"),
+    "ebitda-margin": ("em_annual_target",
+                      {"persistence": "bl_em_persistence",
+                       "company_hist": "bl_em_company_hist",
+                       "sector_median": "bl_em_sector_median"}, 3, "_em_annual"),
+}
+
 
 def walk_forward(panel, feat_cols, models, warmup_quarters=12, min_train=400,
                  ensemble=True, target=None, baseline_cols=None, purge_quarters=0):
@@ -527,22 +545,20 @@ def run_macro_ablation(panel, feat_cols, warmup=12, min_train=400, model_name=No
 
 def evaluate(panel_path=None, feature_lag=1, warmup=12, min_train=400,
              start="2011Q1", which=None, quantiles=True, guidance_ab=True,
-             macro_ab=True, annual=False):
+             macro_ab=True, target_spec="quarterly"):
     if panel_path:
         panel = pd.read_parquet(panel_path)
         feat_cols = assemble.feature_columns(panel)
     else:
         panel = assemble.build_panel(start=start, feature_lag=feature_lag)
         feat_cols = assemble.feature_columns(panel)
-    # Annual mode: TTM-growth target spanning T..T+3, annual baselines, purged
-    # training (see walk_forward), "_annual"-suffixed outputs. The quarterly
-    # add-ons (quantiles, guidance/macro A/B) are quarterly-target analyses.
-    target = ANNUAL_TARGET if annual else TARGET
-    baselines = ANNUAL_BASELINE_COLS if annual else BASELINE_COLS
-    purge = 3 if annual else 0
-    sfx = "_annual" if annual else ""
-    if annual:
+    # Non-quarterly targets: T..T+3 window, purged training (see walk_forward),
+    # suffixed outputs. The add-ons (quantiles, guidance/macro A/B) are
+    # quarterly-target analyses and only run there.
+    target, baselines, purge, sfx = TARGET_SPECS[target_spec]
+    if target_spec != "quarterly":
         quantiles = guidance_ab = macro_ab = False
+    annual = target_spec != "quarterly"
     models = make_models(which)
     print(f"[evaluate] target={target} purge={purge} | panel rows={len(panel)} "
           f"labeled={panel[target].notna().sum()} features={len(feat_cols)} (+sector one-hot)")
@@ -621,8 +637,11 @@ def main():
     ap.add_argument("--ab-model", default=None,
                     help="model used for the macro ablation (default lightgbm)")
     ap.add_argument("--annual", action="store_true",
-                    help="evaluate the annual (TTM) growth target with purged walk-forward")
+                    help="shorthand for --target annual")
+    ap.add_argument("--target", default=None, choices=list(TARGET_SPECS),
+                    help="which target to evaluate (default quarterly)")
     args = ap.parse_args()
+    target_spec = args.target or ("annual" if args.annual else "quarterly")
     which = [s.strip() for s in args.models.split(",")] if args.models else None
     if args.macro_ab_only:
         if args.panel:
@@ -639,7 +658,7 @@ def main():
     evaluate(panel_path=args.panel, feature_lag=args.feature_lag, warmup=args.warmup,
              min_train=args.min_train, start=args.start, which=which,
              quantiles=not args.no_quantiles, guidance_ab=not args.no_guidance_ab,
-             macro_ab=not args.no_macro_ab, annual=args.annual)
+             macro_ab=not args.no_macro_ab, target_spec=target_spec)
 
 
 if __name__ == "__main__":

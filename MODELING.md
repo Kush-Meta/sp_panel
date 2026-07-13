@@ -390,6 +390,37 @@ agrees on activity (INDPRO alone = 21% of macro gain) but also ranks USD/WTI
 highly even though the commodities theme ablates to ~0 — one more reminder
 that importance ≠ incremental value.
 
+## 3h. Margin targets: next-year gross margin and EBITDA margin
+
+`gm_annual_target` / `em_annual_target` = TTM gross / EBITDA margin over the
+year starting at T (ratio of 4-quarter sums), same purged walk-forward as the
+annual revenue target. Coverage fixes that made these viable: gross profit
+falls back to `revenue − cost_of_revenue` when the `GrossProfit` tag is absent
+(coverage 1.8k → 3.2k rows) and `DepreciationAndAmortization` was added as a
+`dep_amort` synonym (EBITDA rows 0.9k → 1.9k). Financials/REITs largely lack
+these concepts, so margin targets skip them. Sign-based directional accuracy
+is vacuous for margins (~0.99 — margins are almost always positive); the
+summary CSVs add `chg_dir_acc`: direction of margin *change* vs the trailing
+TTM margin. Run: `python -m sp_panel.evaluate --target gross-margin` /
+`--target ebitda-margin`.
+
+**Gross margin (2,540 forecasts): persistence wins.** Last year's margin
+predicts next year's with R² 0.861 / RMSE 0.085 / median error 1.6 margin
+points, and **no model beats it** (best: XGBoost 0.090). Gross margin is
+structural — pricing model and cost structure — and barely moves year to
+year; the models pay a shrinkage cost on a target that doesn't want to be
+shrunk. Models do call the *direction of change* better than chance (~56%),
+which persistence by definition cannot. Practical guidance: forecast = the
+trailing TTM margin; use the model only for change-direction flags.
+
+**EBITDA margin (1,446 forecasts): the models earn their keep.** CatBoost
+RMSE 0.104 vs persistence 0.117 (−11%), R² 0.782 vs 0.726, change-direction
+~59%. EBITDA margin moves with operating leverage and cost discipline, so
+there is forecastable variation beyond stickiness — and the familiar pattern
+recurs: persistence still wins the *median* quarter (2.4 vs 3.5 points), the
+model wins the tails. Outputs: `model_metrics_*_{gm,em}_annual.csv`,
+`model_metrics_full_summary_{gm,em}_annual.csv`.
+
 ## 4. Should you use / fine-tune an LLM?
 
 **No, not for the prediction.** This is a structured-numeric forecasting problem;
@@ -428,3 +459,117 @@ guidance/expectations benchmark (§3b).
   macro coverage; BEA is extra-lagged for point-in-time safety. FRED serves
   *revised* macro values, not real-time vintages — this flatters macro features
   slightly, so a negative macro-ablation verdict (§3d) is conservative evidence.
+
+## 7. Model glossary — what each model in the suite actually does
+
+All models see the same design matrix (the engineered features + sector
+one-hot dummies) and the same walk-forward splits; they differ only in how
+they turn features into a prediction. Linear models get median imputation and
+standardization; tree models handle raw scales, and the gradient boosters
+handle missing values natively (a NaN is just routed to whichever side of a
+split fits it best — no imputation guesswork).
+
+**The baselines (sanity rules, not models).** `persistence` repeats the last
+known growth; `seasonal` repeats the same quarter last year; the trailing
+means average the last 4/8 known values; `company_hist` is the firm's own
+long-run average; `sector_median` is the median of sector peers' last growth;
+`expanding_mean` is the grand mean of all past targets. Any model that cannot
+beat these is decoration — that comparison is the whole reason they exist.
+
+**Ridge** — plain linear regression plus a penalty on large coefficients (L2).
+Every feature gets a weight; the penalty shrinks them all toward zero so no
+single noisy feature can dominate. Penalty strength chosen by cross-validation
+inside the training window. Its weakness here: revenue growth's feature
+interactions are nonlinear, and a straight line through them underfits.
+
+**ElasticNet** — same idea with a mixed penalty (L1+L2). The L1 part can push
+weights exactly to zero, so it doubles as automatic feature selection. Useful
+as an interpretable floor: whatever ElasticNet can do is achievable with a
+sparse linear rule.
+
+**RandomForest** — hundreds of decision trees, each trained on a bootstrap
+resample of the data and restricted to a random subset of features at every
+split, then averaged. Individual deep trees overfit wildly; averaging many
+*decorrelated* overfitters cancels their errors (variance reduction). Robust,
+hard to tune badly, and notably the winner on the noisy annual target.
+
+**ExtraTrees** — RandomForest with one extra dose of randomness: split
+thresholds are drawn at random instead of optimized. Trees get individually
+worse but even less correlated; sometimes that trade wins, here it doesn't.
+
+**Gradient boosting (the family: hist_gbm, LightGBM, XGBoost, CatBoost)** —
+instead of averaging independent trees, build *small* trees sequentially,
+each one fit to the errors the ensemble has made so far, and add it with a
+small step size (learning rate 0.03). The ensemble creeps toward the signal,
+correcting itself as it goes — bias reduction rather than variance reduction.
+The four implementations differ in the details:
+- **hist_gbm** (scikit-learn) bins features into histograms for speed and
+  stops adding trees when an internal 15% validation slice stops improving.
+- **LightGBM** grows trees leaf-wise — it always extends whichever leaf cuts
+  the loss most, giving lopsided but efficient trees (capped at 15 leaves,
+  depth 4 here). Fast; used as the fixed workhorse in every ablation.
+- **XGBoost** grows level-wise with a regularized objective; the steadiest
+  performer on the quarterly target.
+- **CatBoost** uses "ordered boosting" — each tree's error estimates are
+  computed only from rows that come earlier in a random ordering, which
+  fights a subtle self-contamination in the gradients.
+
+**Ensemble** — the simple average of the four boosters' predictions. They make
+similar but not identical mistakes; averaging cancels the non-shared part.
+Reliably as good as, or slightly better than, the best member — the usual
+free lunch of blending.
+
+**Quantile LightGBM** (§3b) — the same LightGBM machinery trained with the
+pinball loss at p10/p50/p90 instead of squared error, producing an honest
+uncertainty band around the point forecast rather than a single number.
+
+**Why the winner changes with the horizon:** boosting chases residual signal;
+when the target is comparatively predictable (quarterly, R² ≈ 0.44) that bias
+reduction wins. When the target is mostly noise (annual, R² ≈ 0.12), chasing
+residuals means chasing noise, and RandomForest's variance-averaging is the
+better temperament. That flip is itself evidence the pipeline is honest.
+
+## 8. Feature importance — what the models actually use
+
+**Method.** LightGBM *gain* importance: for every split in every tree, the
+training-loss reduction is credited to the feature that made the split;
+credits are summed and normalized to 100%. Computed on a full-sample fit per
+target (`model_feature_importance{,_annual,_gm_annual,_em_annual}.csv`;
+grouped view in `feature_importance_grouped.csv`).
+
+**Read it with the §3d caveat in mind.** Importance measures what the model
+*consulted*, not what improves forecasts: it splits across correlated columns,
+starves common-shock features (macro's effective sample is ~50 quarters), and
+can credit features that ablate to zero — at the annual horizon the trees
+lean on USD/WTI columns even though the commodities theme adds nothing out of
+sample, while the activity theme is both used AND significant. Importance
+describes the model; **ablation (§3d–3g) decides inclusion.**
+
+Grouped gain importance, % of total, per target:
+
+| feature group | quarterly rev | annual rev | gross margin | EBITDA margin |
+|---|---:|---:|---:|---:|
+| own history (lags/momentum/vol) | **70.8** | **41.9** | 4.7 | 5.7 |
+| fundamentals & margins | 8.9 | 21.7 | **71.8** | **82.8** |
+| macro | 6.1 | 5.5 | 0.7 | 2.4 |
+| sector aggregates (peers) | 4.3 | 3.1 | 0.2 | 0.7 |
+| market (price/risk/valuation) | 4.1 | 12.3 | 1.9 | 2.4 |
+| accounting indicators | 3.9 | 6.0 | 1.0 | 1.8 |
+| BEA sector value-added | 1.6 | 4.8 | 3.8 | 1.9 |
+| guidance | 0.2 | 4.0 | 0.1 | 0.2 |
+| sector identity (one-hot) | 0.0 | 0.7 | 15.7 | 2.1 |
+| seasonality | 0.1 | 0.0 | 0.0 | 0.0 |
+
+Top individual features: quarterly = recent QoQ momentum (21%) + last YoY
+(21%) + seasonal lag (9%); annual = the same history features at half the
+weight plus valuation ratios (EV/revenue, P/S ≈ 7%); gross margin = the
+current gross margin itself (38%) + cost-structure ratios + sector identity;
+EBITDA margin = the current EBITDA margin (66%).
+
+**The pattern across targets is the real insight.** Growth targets are
+history-dominated (what you grew is what you'll grow, fading with horizon as
+valuation/fundamentals rise); margin targets are level-dominated (what you
+earn is what you'll keep earning — sector identity matters for gross margin
+because margin *levels* are sector-structural). Macro never exceeds ~6%
+anywhere — consistent with the ablation verdicts: a real but small, shock-
+concentrated, horizon-dependent contributor.

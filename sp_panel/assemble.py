@@ -81,7 +81,7 @@ def clean_quarterly(fin):
     fin = (fin.sort_values(["ticker", "cq", "period_end"])
               .drop_duplicates(["ticker", "cq"], keep="last"))
 
-    ratio_inputs = ["gross_profit", "operating_income", "net_income", "dep_amort",
+    ratio_inputs = ["gross_profit", "cost_of_revenue", "operating_income", "net_income", "dep_amort",
                     "rd_expense", "sga_expense", "capex", "cfo", "cash", "assets",
                     "assets_current", "liabilities_current", "long_term_debt",
                     "equity", "interest_expense", "inventory", "shares_outstanding",
@@ -516,24 +516,51 @@ def build_panel(start="2011Q1", feature_lag=1, macro_lag=1, winsor=(0.01, 0.99),
     # the test origin (evaluate.walk_forward purge_quarters=3). ttm_revenue is
     # a rolling 4-quarter sum on the gap-free grid, so any missing quarter
     # blanks the annual figure rather than corrupting it.
+    # Annual MARGIN targets share the same year-ahead window: TTM gross /
+    # EBITDA margin over quarters T..T+3 (= the ratio of 4-quarter sums, not
+    # the mean of ratios). Persistence baseline = the trailing TTM margin.
+    # Financials mostly lack gross_profit, so margin targets are NaN there.
     ann_parts = []
     for tk, g in clean.groupby("ticker"):
         g = g.sort_values("cq")
         ttm = g["ttm_revenue"]
         ann = ttm.shift(-3) / ttm.shift(1) - 1.0
         ann_prev = ttm.shift(1) / ttm.shift(5) - 1.0     # last realized TTM YoY
-        ann_parts.append(pd.DataFrame({
+        part = pd.DataFrame({
             "ticker": tk, "cq": g["cq"], "revenue_annual_target": ann,
             "bl_ann_persistence": ann_prev,
             "bl_ann_company_hist": ann_prev.expanding(min_periods=2).mean(),
-        }))
+        })
+        gp = g.get("gross_profit")
+        # many issuers tag cost of revenue but not GrossProfit itself
+        if "cost_of_revenue" in g.columns:
+            derived = g["revenue"] - g["cost_of_revenue"]
+            gp = derived if gp is None else gp.fillna(derived)
+        if gp is not None:
+            gp_ttm = gp.rolling(4).sum()
+            part["gm_annual_target"] = gp_ttm.shift(-3) / ttm.shift(-3)
+            part["bl_gm_persistence"] = gp_ttm.shift(1) / ttm.shift(1)
+            part["bl_gm_company_hist"] = part["bl_gm_persistence"].expanding(min_periods=2).mean()
+        if {"operating_income", "dep_amort"}.issubset(g.columns):
+            eb_ttm = (g["operating_income"] + g["dep_amort"]).rolling(4).sum()
+            part["em_annual_target"] = eb_ttm.shift(-3) / ttm.shift(-3)
+            part["bl_em_persistence"] = eb_ttm.shift(1) / ttm.shift(1)
+            part["bl_em_company_hist"] = part["bl_em_persistence"].expanding(min_periods=2).mean()
+        ann_parts.append(part)
     ann_df = pd.concat(ann_parts, ignore_index=True)
     for c in ("revenue_annual_target", "bl_ann_persistence"):
         ann_df.loc[(ann_df[c] <= YOY_LO) | (ann_df[c] >= YOY_HI), c] = np.nan
+    # margin sanity bands: outside these a large-cap ratio is a data artifact
+    for c, lo, hi in (("gm_annual_target", -0.5, 1.0), ("bl_gm_persistence", -0.5, 1.0),
+                      ("em_annual_target", -1.0, 1.0), ("bl_em_persistence", -1.0, 1.0)):
+        if c in ann_df.columns:
+            ann_df.loc[(ann_df[c] <= lo) | (ann_df[c] >= hi), c] = np.nan
     panel = panel.merge(ann_df, on=["ticker", "cq"], how="left")
-    panel["bl_ann_sector_median"] = (
-        panel.groupby(["sector", "target_quarter"])["bl_ann_persistence"]
-        .transform("median"))
+    for pre in ("ann", "gm", "em"):
+        col = f"bl_{pre}_persistence"
+        if col in panel.columns:
+            panel[f"bl_{pre}_sector_median"] = (
+                panel.groupby(["sector", "target_quarter"])[col].transform("median"))
 
     panel = add_sector_features(panel)
     panel["bl_sector_median"] = panel["f_sector_yoy_median"]

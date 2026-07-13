@@ -61,7 +61,15 @@ bl_company_hist,baseline_ref
 revenue_annual_target,other
 bl_ann_persistence,baseline_ref
 bl_ann_company_hist,baseline_ref
+gm_annual_target,other
+bl_gm_persistence,baseline_ref
+bl_gm_company_hist,baseline_ref
+em_annual_target,other
+bl_em_persistence,baseline_ref
+bl_em_company_hist,baseline_ref
 bl_ann_sector_median,baseline_ref
+bl_gm_sector_median,baseline_ref
+bl_em_sector_median,baseline_ref
 f_sector_yoy_loo,sector_behavior
 f_sector_yoy_median,sector_behavior
 f_sector_yoy_std,sector_behavior
