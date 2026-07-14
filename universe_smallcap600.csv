@@ -1,0 +1,151 @@
+ticker,sector,role,name,source
+QNST,Communication Services,selected,"QuinStreet, Inc.",smallcap600
+YELP,Communication Services,selected,"Yelp, Inc.",smallcap600
+VSNT,Communication Services,dropped_lowcov,"Versant Media Group, Inc.",smallcap600
+TRIP,Communication Services,selected,TripAdvisor,smallcap600
+CARG,Communication Services,selected,CarGurus,smallcap600
+WLY,Communication Services,selected,John Wiley & Sons,smallcap600
+SHEN,Communication Services,selected,Shenandoah Telecommunications Co,smallcap600
+CNK,Communication Services,selected,"Cinemark Holdings, Inc.",smallcap600
+DV,Communication Services,selected,"DoubleVerify Holdings, Inc.",smallcap600
+PPLI,Communication Services,selected,People Inc.,smallcap600
+IRDM,Communication Services,selected,Iridium Communications,smallcap600
+MSGS,Communication Services,backup,Madison Square Garden Sports Corp.,smallcap600
+GTM,Communication Services,backup,ZoomInfo,smallcap600
+ZD,Communication Services,backup,Ziff Davis,smallcap600
+LUMN,Communication Services,backup,Lumen Technologies,smallcap600
+PRDO,Consumer Discretionary,selected,Perdoceo Education Corp.,smallcap600
+FUN,Consumer Discretionary,dropped_lowcov,Six Flags,smallcap600
+CZR,Consumer Discretionary,selected,Caesars Entertainment,smallcap600
+ADT,Consumer Discretionary,selected,ADT Inc.,smallcap600
+RRR,Consumer Discretionary,selected,"Red Rock Resorts, Inc.",smallcap600
+PRSU,Consumer Discretionary,selected,"Pursuit Attractions & Hospitality, Inc.",smallcap600
+SONO,Consumer Discretionary,selected,"Sonos, Inc.",smallcap600
+EAT,Consumer Discretionary,selected,"Brinker International, Inc.",smallcap600
+GPI,Consumer Discretionary,selected,"Group 1 Automotive, Inc.",smallcap600
+FOXF,Consumer Discretionary,selected,Fox Factory,smallcap600
+MCRI,Consumer Discretionary,selected,"Monarch Casino & Resort, Inc.",smallcap600
+SHOO,Consumer Discretionary,backup,"Steven Madden, Ltd.",smallcap600
+ETSY,Consumer Discretionary,backup,Etsy,smallcap600
+SCHL,Consumer Discretionary,backup,Scholastic Corporation,smallcap600
+THRM,Consumer Discretionary,backup,Gentherm Incorporated,smallcap600
+JBSS,Consumer Staples,selected,"John B. Sanfilippo & Son, Inc.",smallcap600
+JJSF,Consumer Staples,selected,J&J Snack Foods Corp.,smallcap600
+CPB,Consumer Staples,selected,The Campbell's Company,smallcap600
+FLO,Consumer Staples,dropped_lowcov,Flowers Foods,smallcap600
+FRPT,Consumer Staples,selected,Freshpet,smallcap600
+ENR,Consumer Staples,selected,Energizer,smallcap600
+COTY,Consumer Staples,selected,Coty,smallcap600
+TR,Consumer Staples,selected,"Tootsie Roll Industries, Inc.",smallcap600
+CHEF,Consumer Staples,selected,"Chefs' Warehouse, Inc.",smallcap600
+WDFC,Consumer Staples,selected,WD-40 Company,smallcap600
+CAG,Consumer Staples,selected,Conagra Brands,smallcap600
+CENTA,Consumer Staples,backup,Central Garden & Pet Company (Class A),smallcap600
+UNFI,Consumer Staples,backup,United Natural Foods Inc,smallcap600
+ANDE,Consumer Staples,backup,"The Andersons, Inc.",smallcap600
+LW,Consumer Staples,backup,Lamb Weston,smallcap600
+CRC,Energy,selected,California Resources Corporation,smallcap600
+SM,Energy,selected,SM Energy Company,smallcap600
+CVI,Energy,selected,"CVR Energy, Inc.",smallcap600
+LPG,Energy,selected,Dorian LPG Ltd.,smallcap600
+GPOR,Energy,selected,Gulfport Energy Corporation,smallcap600
+HP,Energy,selected,"Helmerich & Payne, Inc.",smallcap600
+KNTK,Energy,selected,"Kinetik Holdings, Inc.",smallcap600
+LBRT,Energy,selected,"Liberty Energy, Inc.",smallcap600
+WHD,Energy,selected,"Cactus, Inc.",smallcap600
+INSW,Energy,selected,"International Seaways, Inc.",smallcap600
+HLX,Energy,backup,"Helix Energy Solutions Group, Inc.",smallcap600
+PTEN,Energy,backup,"Patterson-UTI Energy, Inc.",smallcap600
+WKC,Energy,backup,World Kinect Corporation,smallcap600
+KGS,Energy,backup,"Kodiak Gas Services, Inc.",smallcap600
+CRGY,Energy,backup,Crescent Energy Company,smallcap600
+TFIN,Financials,selected,"Triumph Bancorp, Inc.",smallcap600
+AGO,Financials,selected,Assured Guaranty Ltd.,smallcap600
+RDN,Financials,selected,"Radian Group, Inc.",smallcap600
+BANF,Financials,selected,Bancfirst Corp,smallcap600
+ACT,Financials,dropped_lowcov,"Enact Holdings, Inc.",smallcap600
+AMSF,Financials,selected,"Amerisafe, Inc.",smallcap600
+TMP,Financials,selected,Tompkins Financial Corporation,smallcap600
+DFIN,Financials,selected,"Donnelley Financial Solutions, Inc.",smallcap600
+EGBN,Financials,selected,Eagle Bancorp Inc,smallcap600
+FHB,Financials,selected,"First Hawaiian, Inc.",smallcap600
+VCTR,Financials,selected,"Victory Capital Holdings, Inc.",smallcap600
+DAVE,Financials,backup,"Dave, Inc.",smallcap600
+TRST,Financials,backup,TrustCo Bank Corp NY,smallcap600
+BKU,Financials,backup,"BankUnited, Inc.",smallcap600
+RITM,Financials,backup,Rithm Capital,smallcap600
+GKOS,Health Care,selected,Glaukos Corp.,smallcap600
+MMSI,Health Care,selected,"Merit Medical Systems, Inc.",smallcap600
+ADUS,Health Care,selected,Addus HomeCare Corp.,smallcap600
+SDGR,Health Care,selected,"Schrödinger, Inc.",smallcap600
+XNCR,Health Care,selected,Xencor Inc,smallcap600
+PBH,Health Care,selected,Prestige Consumer Healthcare,smallcap600
+TMDX,Health Care,selected,"TransMedics Group, Inc.",smallcap600
+ICUI,Health Care,selected,ICU Medical,smallcap600
+RCUS,Health Care,selected,"Arcus Biosciences, Inc.",smallcap600
+HSTM,Health Care,selected,"HealthStream, Inc.",smallcap600
+PAHC,Health Care,backup,Phibro Animal Health,smallcap600
+TFX,Health Care,backup,Teleflex,smallcap600
+AHCO,Health Care,backup,AdaptHealth Corp.,smallcap600
+LFST,Health Care,backup,Lifestance Health,smallcap600
+CORT,Health Care,backup,Corcept Therapeutics Incorporated,smallcap600
+WOR,Industrials,selected,Worthington Enterprises,smallcap600
+MATX,Industrials,selected,"Matson, Inc.",smallcap600
+PRIM,Industrials,selected,Primoris Services Corporation,smallcap600
+NPK,Industrials,selected,"National Presto Industries, Inc.",smallcap600
+NSIT,Industrials,selected,"Insight Enterprises, Inc.",smallcap600
+MRTN,Industrials,selected,"Marten Transport, Ltd.",smallcap600
+FA,Industrials,dropped_lowcov,First Advantage Corporation,smallcap600
+GBX,Industrials,selected,"The Greenbrier Companies, Inc.",smallcap600
+FSS,Industrials,selected,Federal Signal Corporation,smallcap600
+GTES,Industrials,selected,Gates Corporation,smallcap600
+GVA,Industrials,selected,"Granite Construction, Inc.",smallcap600
+ACA,Industrials,backup,"Arcosa, Inc.",smallcap600
+ESE,Industrials,backup,ESCO Technologies Inc.,smallcap600
+WSC,Industrials,backup,WillScot Holdings Corp.,smallcap600
+ECG,Industrials,backup,"Everus Construction Group, Inc.",smallcap600
+AMR,Materials,selected,"Alpha Metallurgical Resources, Inc.",smallcap600
+IOSP,Materials,selected,"Innospec, Inc.",smallcap600
+KOP,Materials,selected,"Koppers Holdings, Inc.",smallcap600
+SXT,Materials,selected,Sensient Technologies,smallcap600
+MTX,Materials,selected,Minerals Technologies,smallcap600
+HWKN,Materials,selected,"Hawkins, Inc.",smallcap600
+MTRN,Materials,selected,Materion Corp.,smallcap600
+MTUS,Materials,selected,Metallus Inc,smallcap600
+LNN,Materials,selected,Lindsay Corporation,smallcap600
+FMC,Materials,selected,FMC Corporation,smallcap600
+HCC,Materials,backup,"Warrior Met Coal, Inc.",smallcap600
+SLVM,Materials,backup,Sylvamo Corp.,smallcap600
+CC,Materials,backup,Chemours,smallcap600
+WS,Materials,backup,Worthington Steel,smallcap600
+EMN,Materials,backup,Eastman Chemical Company,smallcap600
+DEA,Real Estate,selected,"Easterly Government Properties, Inc.",smallcap600
+GNL,Real Estate,selected,"Global Net Lease, Inc.",smallcap600
+MMI,Real Estate,selected,"Marcus & Millichap, Inc.",smallcap600
+CWK,Real Estate,selected,Cushman & Wakefield plc,smallcap600
+AKR,Real Estate,selected,Acadia Realty Trust,smallcap600
+LTC,Real Estate,selected,"LTC Properties, Inc.",smallcap600
+BFS,Real Estate,selected,"Saul Centers, Inc.",smallcap600
+CSR,Real Estate,selected,Centerspace Trust,smallcap600
+SAFE,Real Estate,selected,"Safehold, Inc.",smallcap600
+ARR,Real Estate,dropped_lowcov,Armour Residential REIT,smallcap600
+PMT,Real Estate,selected,PennyMac Mortgage Investment Trust,smallcap600
+DRH,Real Estate,backup,DiamondRock Hospitality Company,smallcap600
+MPT,Real Estate,backup,Medical Properties Trust,smallcap600
+RHP,Real Estate,backup,Ryman Hospitality Properties,smallcap600
+MRP,Real Estate,backup,"Millrose Properties, Inc.",smallcap600
+RAMP,Technology,selected,"LiveRamp Holdings, Inc.",smallcap600
+PLAB,Technology,selected,"Photronics, Inc.",smallcap600
+TDC,Technology,selected,Teradata,smallcap600
+BHE,Technology,selected,"Benchmark Electronics, Inc.",smallcap600
+ADEA,Technology,selected,"Adeia, Inc.",smallcap600
+DIOD,Technology,selected,Diodes Incorporated,smallcap600
+OSIS,Technology,selected,"OSI Systems, Inc.",smallcap600
+ARLO,Technology,selected,Arlo Technologies,smallcap600
+ROG,Technology,selected,Rogers Corporation,smallcap600
+VSAT,Technology,selected,"Viasat, Inc.",smallcap600
+CRSR,Technology,backup,Corsair Gaming,smallcap600
+NTCT,Technology,backup,"NETSCOUT Systems, Inc.",smallcap600
+DXC,Technology,backup,DXC Technology,smallcap600
+MARA,Technology,backup,"MARA Holdings, Inc.",smallcap600
+ACMR,Technology,backup,"ACM Research, Inc.",smallcap600

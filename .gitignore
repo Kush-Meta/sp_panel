@@ -19,3 +19,8 @@ catboost_info/
 # (panel.parquet, model_metrics_*.csv, etc.) so the evaluation is re-runnable
 # directly from the clone.
 data/
+# Validation universes' data dirs (regenerable via build_validation_universes.py
+# + the collection pipeline with SP_PANEL_DATA_DIR/SP_PANEL_UNIVERSE_CSV).
+data_sc600/
+data_r2000/
+.Rhistory

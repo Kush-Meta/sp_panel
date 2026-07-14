@@ -573,3 +573,215 @@ earn is what you'll keep earning — sector identity matters for gross margin
 because margin *levels* are sector-structural). Macro never exceeds ~6%
 anywhere — consistent with the ablation verdicts: a real but small, shock-
 concentrated, horizon-dependent contributor.
+
+## 8b. Per-feature importance table (individual features)
+
+§8 groups importance into blocks; this is the full per-feature breakdown from
+the same LightGBM gain method (full-sample fit per target, gain % of total).
+Every feature carrying non-zero weight in at least one target is listed, ranked
+by its weight in the primary quarterly model. Sector one-hots appear as
+`sec_*`. The complete 96-row export (including all-zero features) is
+`data/model_feature_importance_all_targets.csv`; per-target files remain at
+`model_feature_importance{,_annual,_gm_annual,_em_annual}.csv`. Read it with
+the §8 caveat: gain shows what the trees *split on*, which splits across
+correlated columns and can rank a feature the ablation shows adds nothing —
+it describes the model, it does not by itself justify inclusion.
+
+| feature | group | quarterly | annual | gross margin | EBITDA margin |
+|---|---|---:|---:|---:|---:|
+| `f_qoq_mean_4` | own history | 21.37 | 7.99 | 0.34 | 0.37 |
+| `f_lag_yoy_1` | own history | 20.76 | 8.05 | 0.16 | 0.20 |
+| `f_lag_yoy_4` | own history | 9.45 | 1.80 | 0.04 | 0.07 |
+| `f_roll_std_4` | own history | 3.88 | 2.92 | 0.12 | 0.30 |
+| `f_lag_yoy_2` | own history | 3.61 | 1.15 | 0.25 | 0.15 |
+| `f_m_oper` | fundamentals & margins | 2.14 | 1.58 | 3.01 | 5.64 |
+| `f_yoy_vs_sector` | sector aggregates | 1.98 | 1.76 | 0.09 | 0.13 |
+| `f_qoq_1` | own history | 1.84 | 4.07 | 0.09 | 0.26 |
+| `f_acct_recv_gap` | accounting indicators | 1.51 | 1.30 | 0.23 | 0.25 |
+| `mkt_ret_63` | market | 1.40 | 0.59 | 0.04 | 0.05 |
+| `f_roll_mean_4` | own history | 1.32 | 0.97 | 0.18 | 0.09 |
+| `f_lag_yoy_5` | own history | 1.32 | 0.79 | 0.07 | 0.11 |
+| `f_m_net` | fundamentals & margins | 1.30 | 1.95 | 3.71 | 2.72 |
+| `mkt_ret_126` | market | 1.25 | 2.48 | 0.07 | 0.39 |
+| `f_m_sga` | fundamentals & margins | 1.22 | 3.31 | 8.05 | 0.43 |
+| `f_yoy_z` | own history | 1.20 | 0.68 | 0.05 | 0.13 |
+| `f_sector_yoy_loo` | sector aggregates | 1.19 | 0.25 | 0.02 | 0.12 |
+| `f_roll_std_8` | own history | 1.13 | 1.52 | 0.14 | 0.28 |
+| `f_accel_1` | own history | 1.06 | 0.57 | 0.10 | 0.15 |
+| `f_m_oper_chg4` | fundamentals & margins | 1.02 | 0.98 | 0.18 | 1.08 |
+| `f_acct_defrev_chg4` | accounting indicators | 0.95 | 2.88 | 0.09 | 0.50 |
+| `f_acct_gw_jump` | accounting indicators | 0.93 | 0.58 | 0.30 | 0.19 |
+| `f_lag_yoy_3` | own history | 0.92 | 2.00 | 0.07 | 0.09 |
+| `f_hist_std` | own history | 0.88 | 4.21 | 1.33 | 1.98 |
+| `mac_retail_sales_yoy` | macro | 0.84 | 0.49 | 0.02 | 0.07 |
+| `f_sector_yoy_median` | sector aggregates | 0.80 | 0.70 | 0.07 | 0.24 |
+| `bea_sector_va_qoq` | BEA sector value-added | 0.77 | 2.20 | 0.05 | 0.25 |
+| `mac_wti_oil_yoy` | macro | 0.77 | 0.39 | 0.04 | 0.14 |
+| `f_hist_mean` | own history | 0.77 | 2.33 | 1.35 | 0.79 |
+| `f_accel_seasonal` | own history | 0.74 | 1.05 | 0.05 | 0.27 |
+| `mac_retail_sales_qoq` | macro | 0.68 | 0.26 | 0.01 | 0.07 |
+| `f_m_net_chg4` | fundamentals & margins | 0.67 | 1.60 | 0.10 | 0.50 |
+| `f_m_ebitda` | fundamentals & margins | 0.59 | 2.53 | 1.55 | 66.31 |
+| `mac_ism_pmi_proxy_qoq` | macro | 0.58 | 0.06 | 0.01 | 0.04 |
+| `mkt_market_cap` | market | 0.57 | 2.03 | 0.92 | 0.89 |
+| `f_roll_mean_8` | own history | 0.53 | 1.40 | 0.22 | 0.27 |
+| `f_acct_defrev_to_rev` | accounting indicators | 0.51 | 1.28 | 0.37 | 0.86 |
+| `mac_wti_oil_qoq` | macro | 0.50 | 0.18 | 0.02 | 0.06 |
+| `f_asset_turnover` | fundamentals & margins | 0.48 | 2.75 | 9.06 | 3.15 |
+| `bea_sector_va` | BEA sector value-added | 0.39 | 1.99 | 3.69 | 1.57 |
+| `bea_sector_va_yoy` | BEA sector value-added | 0.39 | 0.57 | 0.06 | 0.12 |
+| `mac_yield_curve_10y2y` | macro | 0.39 | 0.08 | 0.06 | 0.06 |
+| `f_log_revenue` | fundamentals & margins | 0.37 | 3.44 | 3.44 | 0.75 |
+| `f_sector_yoy_std` | sector aggregates | 0.36 | 0.42 | 0.02 | 0.21 |
+| `mkt_ps_ratio` | market | 0.35 | 3.49 | 0.37 | 0.49 |
+| `f_m_gross_chg4` | fundamentals & margins | 0.33 | 0.40 | 0.43 | 0.13 |
+| `mac_wti_oil` | macro | 0.31 | 0.48 | 0.04 | 0.04 |
+| `mac_consumer_sentiment` | macro | 0.29 | 0.15 | 0.03 | 0.11 |
+| `f_m_ebitda_chg4` | fundamentals & margins | 0.28 | 1.39 | 0.07 | 1.04 |
+| `mkt_drawdown_63` | market | 0.27 | 0.18 | 0.04 | 0.12 |
+| `mac_cpi_yoy` | macro | 0.26 | 0.08 | 0.03 | 0.61 |
+| `mkt_ev_to_rev` | market | 0.26 | 3.53 | 0.44 | 0.47 |
+| `mac_usd_index_yoy` | macro | 0.21 | 0.54 | 0.01 | 0.07 |
+| `f_m_rd` | fundamentals & margins | 0.21 | 1.08 | 4.11 | 0.03 |
+| `mac_usd_index_qoq` | macro | 0.18 | 0.03 | 0.01 | 0.01 |
+| `mac_vix` | macro | 0.16 | 0.18 | 0.02 | 0.06 |
+| `f_m_gross` | fundamentals & margins | 0.16 | 0.52 | 38.01 | 0.92 |
+| `mac_fed_funds` | macro | 0.15 | 0.12 | 0.02 | 0.12 |
+| `mac_cpi_qoq` | macro | 0.15 | 0.12 | 0.01 | 0.05 |
+| `f_guid_days_since_last` | guidance | 0.14 | 2.86 | 0.11 | 0.15 |
+| `mac_ism_pmi_proxy_yoy` | macro | 0.13 | 0.15 | 0.06 | 0.07 |
+| `mac_unemployment` | macro | 0.12 | 0.10 | 0.00 | 0.02 |
+| `mac_ism_pmi_proxy` | macro | 0.10 | 1.17 | 0.11 | 0.11 |
+| `f_m_cfo` | fundamentals & margins | 0.08 | 0.01 | 0.05 | 0.05 |
+| `mac_ust_3m` | macro | 0.08 | 0.10 | 0.02 | 0.22 |
+| `f_is_q1` | seasonality | 0.07 | 0.01 | 0.00 | 0.04 |
+| `f_obs_count` | own history | 0.07 | 0.42 | 0.19 | 0.16 |
+| `mac_ust_2y` | macro | 0.05 | 0.25 | 0.05 | 0.01 |
+| `mac_cpi` | macro | 0.04 | 0.05 | 0.07 | 0.15 |
+| `mac_baa_spread` | macro | 0.04 | 0.07 | 0.01 | 0.06 |
+| `mac_ust_10y` | macro | 0.04 | 0.09 | 0.02 | 0.17 |
+| `mac_usd_index` | macro | 0.03 | 0.15 | 0.07 | 0.02 |
+| `sec_Energy` | sector identity | 0.02 | 0.13 | 0.42 | 0.01 |
+| `f_guid_latest_lower` | guidance | 0.02 | 0.01 | 0.01 | 0.00 |
+| `mac_core_pce` | macro | 0.02 | 0.08 | 0.01 | 0.01 |
+| `f_m_capex` | fundamentals & margins | 0.01 | 0.13 | 0.06 | 0.03 |
+| `f_guid_latest_raise` | guidance | 0.01 | 1.03 | 0.00 | 0.00 |
+| `f_guid_raise_90d` | guidance | 0.01 | 0.00 | 0.00 | 0.00 |
+| `sec_Industrials` | sector identity | 0.00 | 0.06 | 1.55 | 0.00 |
+| `f_acct_ma_recent` | accounting indicators | 0.00 | 0.00 | 0.02 | 0.00 |
+| `f_is_q2` | seasonality | 0.00 | 0.00 | 0.00 | 0.01 |
+| `mac_retail_sales` | macro | 0.00 | 0.08 | 0.01 | 0.04 |
+| `sec_Consumer Discretionary` | sector identity | 0.00 | 0.00 | 0.75 | 0.03 |
+| `f_guid_net_dir_365d` | guidance | 0.00 | 0.07 | 0.00 | 0.00 |
+| `sec_Communication Services` | sector identity | 0.00 | 0.25 | 0.21 | 0.14 |
+| `sec_Consumer Staples` | sector identity | 0.00 | 0.00 | 0.18 | 0.00 |
+| `sec_Financials` | sector identity | 0.00 | 0.01 | 0.00 | 0.12 |
+| `sec_Health Care` | sector identity | 0.00 | 0.01 | 8.18 | 0.00 |
+| `sec_Materials` | sector identity | 0.00 | 0.00 | 2.20 | 0.00 |
+| `sec_Real Estate` | sector identity | 0.00 | 0.21 | 0.01 | 1.81 |
+| `sec_Technology` | sector identity | 0.00 | 0.03 | 2.18 | 0.00 |
+
+## 9. Out-of-universe validation: do the results hold on small caps?
+
+Every result above comes from one universe — 100 S&P 500 mega caps. To test
+whether the findings are properties of *the problem* or artifacts of *large
+caps*, the entire pipeline was replicated on two disjoint out-of-sample
+universes from the same 10 GICS sectors:
+
+- **SC600** — 100 S&P SmallCap 600 names (definitionally not in the S&P 500;
+  ~$1–7B caps). `universe_smallcap600.csv`.
+- **R2000** — 100 Russell 2000 names, excluding S&P 500 *and* 600 members (the
+  genuinely small tier). `universe_russell2000.csv`.
+
+Construction (`build_validation_universes.py`): S&P 600/500 constituents from
+Wikipedia; Russell 2000 membership from Vanguard's VTWO holdings API (iShares'
+IWM download is bot-walled) with sectors from Nasdaq's screener; per-sector
+seeded random sample of 10 + backups; a coverage swap pass demotes names with
+<20 labeled quarters and promotes same-sector backups (audit trail in the
+`role` column). Config gained two env overrides — `SP_PANEL_DATA_DIR` (redirect
+all outputs; without it the second universe would overwrite `data/`) and
+`SP_PANEL_UNIVERSE_CSV` (load the universe from CSV) — so the exact same code
+runs on each universe. Universe-independent inputs (BEA, FRED caches) are
+copied in, so no API keys or re-pulls. Run per universe:
+`SP_PANEL_DATA_DIR=data_sc600 SP_PANEL_UNIVERSE_CSV=universe_smallcap600.csv
+python -m sp_panel.run --financials --prices --macro && python -m sp_panel.assemble`,
+then `evaluate` for each target; compare with `python -m sp_panel.summarize
+--compare "S&P500=data" "SC600=data_sc600" "R2000=data_r2000"`.
+
+**Caveats** (documented, not fatal): (a) survivorship — current constituents
+with long histories are survivors, but the S&P 500 universe has the same bias,
+so the *comparison* is like-for-like; (b) small caps tag less XBRL, so margin
+coverage is thinner (gross margin ~2.7k/2.0k rows vs 3.2k); (c) R2000 sectors
+are Nasdaq-screener approximations of GICS, not the official scheme;
+(d) guidance/filing-event/short-interest data were not collected for the new
+universes (they are off by default anyway).
+
+### Result 1 — the harder-but-same story (quarterly revenue growth)
+
+| universe | tickers | target std | best model RMSE | R² | dir-acc | vs best baseline |
+|---|---:|---:|---:|---:|---:|---:|
+| S&P500 | 100 | 0.251 | 0.188 | 0.44 | 0.83 | +17.7% |
+| SC600 | 100 | 0.358 | 0.291 | 0.37 | 0.78 | +13.2% |
+| R2000 | 99 | 0.404 | 0.326 | 0.32 | 0.79 | +13.0% |
+
+Smaller companies have **intrinsically noisier revenue** (target std rises
+0.25→0.36→0.40), so absolute error rises and R² falls monotonically with size —
+exactly as theory predicts. But the **model still beats every naive baseline by
+13–18% in all three universes**, the ensemble of boosters wins each time, and
+directional accuracy stays ~0.78–0.83. The *relative* value of the model is
+universe-invariant; only the achievable ceiling moves.
+
+### Result 2 — feature-importance structure is universe-invariant
+
+Quarterly gain importance, grouped (% of total), is nearly identical across the
+three universes:
+
+| feature group | S&P500 | SC600 | R2000 |
+|---|---:|---:|---:|
+| own history (lags/momentum/vol) | 70.8 | 65.1 | 66.0 |
+| fundamentals & margins | 8.9 | 7.7 | 10.5 |
+| macro | 6.1 | 7.8 | 6.8 |
+| sector aggregates (peers) | 4.3 | 7.8 | 5.9 |
+| market (price/risk/valuation) | 4.1 | 5.8 | 6.2 |
+| accounting indicators | 3.9 | 3.3 | 2.9 |
+
+The rank ordering is preserved and the magnitudes barely move — own-history
+dominates, macro sits at 6–8%, everything else is single digits. The
+history-dominated-growth / level-dominated-margin split (§8) also replicates:
+fundamentals carry 55–83% of margin importance in every universe. **The
+structure we documented is a property of the forecasting problem, not of the
+S&P 500.**
+
+### Result 3 — the macro verdict holds (and is slightly stronger for small caps)
+
+Quarter-clustered macro A/B ablation (with vs without `mac_*`), per universe:
+
+| universe | ΔRMSE | DM p | quarters macro better | best-quarter share |
+|---|---:|---:|---:|---:|
+| S&P500 | +0.0004 | 0.43 | 24/49 | 0.91 |
+| SC600 | +0.0003 | 0.80 | 20/49 | 1.51 |
+| R2000 | +0.0010 | 0.23 | 24/46 | 0.32 |
+
+Macro is **insignificant on average in all three** — the tail-insurance verdict
+replicates. Two nuances worth noting for the small caps: R2000 has the largest
+(still-insignificant) delta and, tellingly, the *least* regime concentration
+(0.32 vs 0.91 — the gain is spread across quarters rather than one COVID
+rebound), and at the **annual** horizon macro importance *rises* with
+smallness (5.5 → 9.1 → 10.7%). Reading: small, domestically-exposed firms are
+somewhat more macro-sensitive than mega caps, consistent with intuition — but
+not enough to clear significance at the quarterly horizon.
+
+### One genuine divergence
+
+R2000 **gross-margin** importance shifts the accounting block from ~1% (large
+caps) to **16.6%**, and margin R² degrades most for the smallest tier (EBITDA
+margin 0.78 → 0.51 → 0.39). Small-cap margins are less sticky and lean more on
+balance-sheet accounting signal — a place where a size-specific model *might*
+pay, unlike the growth targets. Comparison artifacts:
+`data/validation_universe_comparison_{importance_*,metrics,macro}.csv`.
+
+**Bottom line for the deck:** the three headline conclusions — models beat
+baselines, own-history dominates with macro as a minor shock-concentrated
+contributor, and margins are level-driven — all replicate on companies 10–100×
+smaller. The findings are robust to company size; small caps are simply a
+noisier version of the same structure.

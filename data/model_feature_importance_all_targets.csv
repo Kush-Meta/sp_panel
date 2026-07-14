@@ -1,0 +1,97 @@
+feature,group,quarterly,annual,gross_margin,ebitda_margin
+f_qoq_mean_4,own history (lags/momentum/vol),21.37,7.99,0.34,0.37
+f_lag_yoy_1,own history (lags/momentum/vol),20.76,8.05,0.16,0.2
+f_lag_yoy_4,own history (lags/momentum/vol),9.45,1.8,0.04,0.07
+f_roll_std_4,own history (lags/momentum/vol),3.88,2.92,0.12,0.3
+f_lag_yoy_2,own history (lags/momentum/vol),3.61,1.15,0.25,0.15
+f_m_oper,fundamentals & margins,2.14,1.58,3.01,5.64
+f_yoy_vs_sector,sector aggregates (peers),1.98,1.76,0.09,0.13
+f_qoq_1,own history (lags/momentum/vol),1.84,4.07,0.09,0.26
+f_acct_recv_gap,accounting indicators,1.51,1.3,0.23,0.25
+mkt_ret_63,market (price/risk/valuation),1.4,0.59,0.04,0.05
+f_roll_mean_4,own history (lags/momentum/vol),1.32,0.97,0.18,0.09
+f_lag_yoy_5,own history (lags/momentum/vol),1.32,0.79,0.07,0.11
+f_m_net,fundamentals & margins,1.3,1.95,3.71,2.72
+mkt_ret_126,market (price/risk/valuation),1.25,2.48,0.07,0.39
+f_m_sga,fundamentals & margins,1.22,3.31,8.05,0.43
+f_yoy_z,own history (lags/momentum/vol),1.2,0.68,0.05,0.13
+f_sector_yoy_loo,sector aggregates (peers),1.19,0.25,0.02,0.12
+f_roll_std_8,own history (lags/momentum/vol),1.13,1.52,0.14,0.28
+f_accel_1,own history (lags/momentum/vol),1.06,0.57,0.1,0.15
+f_m_oper_chg4,fundamentals & margins,1.02,0.98,0.18,1.08
+f_acct_defrev_chg4,accounting indicators,0.95,2.88,0.09,0.5
+f_acct_gw_jump,accounting indicators,0.93,0.58,0.3,0.19
+f_lag_yoy_3,own history (lags/momentum/vol),0.92,2.0,0.07,0.09
+f_hist_std,own history (lags/momentum/vol),0.88,4.21,1.33,1.98
+mac_retail_sales_yoy,macro,0.84,0.49,0.02,0.07
+f_sector_yoy_median,sector aggregates (peers),0.8,0.7,0.07,0.24
+bea_sector_va_qoq,BEA sector value-added,0.77,2.2,0.05,0.25
+mac_wti_oil_yoy,macro,0.77,0.39,0.04,0.14
+f_hist_mean,own history (lags/momentum/vol),0.77,2.33,1.35,0.79
+f_accel_seasonal,own history (lags/momentum/vol),0.74,1.05,0.05,0.27
+mac_retail_sales_qoq,macro,0.68,0.26,0.01,0.07
+f_m_net_chg4,fundamentals & margins,0.67,1.6,0.1,0.5
+f_m_ebitda,fundamentals & margins,0.59,2.53,1.55,66.31
+mac_ism_pmi_proxy_qoq,macro,0.58,0.06,0.01,0.04
+mkt_market_cap,market (price/risk/valuation),0.57,2.03,0.92,0.89
+f_roll_mean_8,own history (lags/momentum/vol),0.53,1.4,0.22,0.27
+f_acct_defrev_to_rev,accounting indicators,0.51,1.28,0.37,0.86
+mac_wti_oil_qoq,macro,0.5,0.18,0.02,0.06
+f_asset_turnover,fundamentals & margins,0.48,2.75,9.06,3.15
+bea_sector_va,BEA sector value-added,0.39,1.99,3.69,1.57
+bea_sector_va_yoy,BEA sector value-added,0.39,0.57,0.06,0.12
+mac_yield_curve_10y2y,macro,0.39,0.08,0.06,0.06
+f_log_revenue,fundamentals & margins,0.37,3.44,3.44,0.75
+f_sector_yoy_std,sector aggregates (peers),0.36,0.42,0.02,0.21
+mkt_ps_ratio,market (price/risk/valuation),0.35,3.49,0.37,0.49
+f_m_gross_chg4,fundamentals & margins,0.33,0.4,0.43,0.13
+mac_wti_oil,macro,0.31,0.48,0.04,0.04
+mac_consumer_sentiment,macro,0.29,0.15,0.03,0.11
+f_m_ebitda_chg4,fundamentals & margins,0.28,1.39,0.07,1.04
+mkt_drawdown_63,market (price/risk/valuation),0.27,0.18,0.04,0.12
+mac_cpi_yoy,macro,0.26,0.08,0.03,0.61
+mkt_ev_to_rev,market (price/risk/valuation),0.26,3.53,0.44,0.47
+mac_usd_index_yoy,macro,0.21,0.54,0.01,0.07
+f_m_rd,fundamentals & margins,0.21,1.08,4.11,0.03
+mac_usd_index_qoq,macro,0.18,0.03,0.01,0.01
+mac_vix,macro,0.16,0.18,0.02,0.06
+f_m_gross,fundamentals & margins,0.16,0.52,38.01,0.92
+mac_fed_funds,macro,0.15,0.12,0.02,0.12
+mac_cpi_qoq,macro,0.15,0.12,0.01,0.05
+f_guid_days_since_last,guidance,0.14,2.86,0.11,0.15
+mac_ism_pmi_proxy_yoy,macro,0.13,0.15,0.06,0.07
+mac_unemployment,macro,0.12,0.1,0.0,0.02
+mac_ism_pmi_proxy,macro,0.1,1.17,0.11,0.11
+f_m_cfo,fundamentals & margins,0.08,0.01,0.05,0.05
+mac_ust_3m,macro,0.08,0.1,0.02,0.22
+f_is_q1,seasonality,0.07,0.01,0.0,0.04
+f_obs_count,own history (lags/momentum/vol),0.07,0.42,0.19,0.16
+mac_ust_2y,macro,0.05,0.25,0.05,0.01
+mac_cpi,macro,0.04,0.05,0.07,0.15
+mac_baa_spread,macro,0.04,0.07,0.01,0.06
+mac_ust_10y,macro,0.04,0.09,0.02,0.17
+mac_usd_index,macro,0.03,0.15,0.07,0.02
+sec_Energy,sector identity (one-hot),0.02,0.13,0.42,0.01
+f_guid_latest_lower,guidance,0.02,0.01,0.01,0.0
+mac_core_pce,macro,0.02,0.08,0.01,0.01
+f_m_capex,fundamentals & margins,0.01,0.13,0.06,0.03
+f_guid_latest_raise,guidance,0.01,1.03,0.0,0.0
+f_guid_raise_90d,guidance,0.01,0.0,0.0,0.0
+sec_Industrials,sector identity (one-hot),0.0,0.06,1.55,0.0
+f_guid_lower_90d,guidance,0.0,0.0,0.0,0.0
+f_is_q4,seasonality,0.0,0.0,0.0,0.0
+f_acct_ma_recent,accounting indicators,0.0,0.0,0.02,0.0
+f_is_q2,seasonality,0.0,0.0,0.0,0.01
+mac_retail_sales,macro,0.0,0.08,0.01,0.04
+sec_Consumer Discretionary,sector identity (one-hot),0.0,0.0,0.75,0.03
+f_guid_net_dir_365d,guidance,0.0,0.07,0.0,0.0
+f_guid_net_dir_180d,guidance,0.0,0.0,0.0,0.0
+sec_Communication Services,sector identity (one-hot),0.0,0.25,0.21,0.14
+sec_Consumer Staples,sector identity (one-hot),0.0,0.0,0.18,0.0
+f_guid_count_180d,guidance,0.0,0.0,0.0,0.0
+sec_Financials,sector identity (one-hot),0.0,0.01,0.0,0.12
+sec_Health Care,sector identity (one-hot),0.0,0.01,8.18,0.0
+f_is_q3,seasonality,0.0,0.0,0.0,0.0
+sec_Materials,sector identity (one-hot),0.0,0.0,2.2,0.0
+sec_Real Estate,sector identity (one-hot),0.0,0.21,0.01,1.81
+sec_Technology,sector identity (one-hot),0.0,0.03,2.18,0.0

@@ -2,7 +2,16 @@
 
 The one thing you MUST change before running is CONTACT_EMAIL — the SEC requires a
 real contact in the User-Agent header and will throttle/ban generic ones.
+
+Environment overrides (for running a second universe without clobbering the
+default `data/` outputs — see MODELING.md §9):
+  SP_PANEL_DATA_DIR       absolute/relative path replacing ROOT/"data"
+  SP_PANEL_UNIVERSE_CSV   CSV (ticker,sector[,role]) replacing the built-in
+                          UNIVERSE dict; rows with role == "backup" are held
+                          in reserve and not loaded
 """
+import csv
+import os
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -16,7 +25,7 @@ USER_AGENT = f"{CONTACT_NAME} {CONTACT_EMAIL}"
 
 # Where everything lands.
 ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT / "data"
+DATA_DIR = Path(os.environ.get("SP_PANEL_DATA_DIR", str(ROOT / "data")))
 CACHE_DIR = DATA_DIR / "cache"          # raw companyfacts JSON, so reruns are free
 for _d in (DATA_DIR, CACHE_DIR):
     _d.mkdir(parents=True, exist_ok=True)
@@ -88,6 +97,20 @@ UNIVERSE = {
     "GS": "Financials", "C": "Financials", "USB": "Financials",
     "WFC": "Financials",
 }
+
+# Universe override for validation runs: a CSV of ticker,sector[,role] replaces
+# the dict above. Sector labels must match the 10 GICS names used above (they
+# key SECTOR_SERIES and the BEA crosswalk). Rows flagged role="backup" are the
+# ranked reserve pool used by the coverage swap pass — not part of the universe.
+_universe_csv = os.environ.get("SP_PANEL_UNIVERSE_CSV")
+if _universe_csv:
+    with open(_universe_csv, newline="") as _f:
+        UNIVERSE = {row["ticker"].strip(): row["sector"].strip()
+                    for row in csv.DictReader(_f)
+                    if row.get("ticker", "").strip()
+                    and row.get("role", "selected").strip() in ("selected", "")}
+    if not UNIVERSE:
+        raise SystemExit(f"SP_PANEL_UNIVERSE_CSV={_universe_csv} yielded no tickers")
 
 # ---------------------------------------------------------------------------
 # XBRL (us-gaap) concepts to extract from companyfacts. Revenue and a few others

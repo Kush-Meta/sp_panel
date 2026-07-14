@@ -90,7 +90,10 @@ def parse_company(data: dict, ticker: str, derive_q4: bool = True,
     if not data or "facts" not in data or "us-gaap" not in data["facts"]:
         return pd.DataFrame()
     usgaap = data["facts"]["us-gaap"]
+    # SEC serves cik as int for most filers but as a zero-padded STRING for
+    # some new registrants; a mixed int/str column breaks parquet writes.
     cik = data.get("cik")
+    cik = int(cik) if cik is not None else None
 
     rows = []
     for concept, synonyms in config.CONCEPTS.items():

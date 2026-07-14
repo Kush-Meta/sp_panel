@@ -1,0 +1,150 @@
+ticker,sector,role,name,source
+AMCX,Communication Services,selected,AMC Networks Inc. Class A,russell2000
+OPTU,Communication Services,selected,Altice USA Inc. Class A,russell2000
+LILAK,Communication Services,selected,Liberty Latin America Ltd.,russell2000
+CXDO,Communication Services,selected,Crexendo Inc.,russell2000
+SPOK,Communication Services,selected,Spok Holdings Inc.,russell2000
+ATEX,Communication Services,selected,Anterix Inc.,russell2000
+ATNI,Communication Services,selected,ATN International Inc.,russell2000
+INSG,Communication Services,selected,Inseego Corp.,russell2000
+LILA,Communication Services,selected,Liberty Latin America Ltd. Class A,russell2000
+CABO,Communication Services,selected,Cable One Inc.,russell2000
+AIOT,Communication Services,backup,Powerfleet Inc.,russell2000
+TBCH,Communication Services,backup,Turtle Beach Corp.,russell2000
+IDT,Communication Services,backup,IDT Corp. Class B,russell2000
+TTGT,Communication Services,backup,TechTarget Inc.,russell2000
+CASS,Consumer Discretionary,selected,Cass Information Systems Inc.,russell2000
+RRBI,Consumer Discretionary,selected,Red River Bancshares Inc.,russell2000
+OPRX,Consumer Discretionary,selected,OptimizeRx Corp.,russell2000
+LOVE,Consumer Discretionary,selected,Lovesac Co.,russell2000
+RMR,Consumer Discretionary,selected,RMR Group Inc. Class A,russell2000
+GSAT,Consumer Discretionary,selected,Globalstar Inc.,russell2000
+ODC,Consumer Discretionary,selected,Oil-Dri Corp. of America,russell2000
+ALIT,Consumer Discretionary,dropped_lowcov,Alight Inc. Class A,russell2000
+BRSL,Consumer Discretionary,dropped_lowcov,International Game Technology plc,russell2000
+XMTR,Consumer Discretionary,dropped_lowcov,Xometry Inc. Class A,russell2000
+DBI,Consumer Discretionary,selected,Designer Brands Inc. Class A,russell2000
+TTEC,Consumer Discretionary,selected,TTEC Holdings Inc.,russell2000
+DIN,Consumer Discretionary,selected,Dine Brands Global Inc.,russell2000
+MGRC,Consumer Discretionary,backup,McGrath RentCorp,russell2000
+CWH,Consumer Discretionary,backup,Camping World Holdings Inc. Class A,russell2000
+BGS,Consumer Staples,selected,B&G Foods Inc.,russell2000
+YSWY,Consumer Staples,dropped_lowcov,Yesway Inc. Class A,russell2000
+NGVC,Consumer Staples,selected,Natural Grocers by Vitamin Cottage Inc.,russell2000
+WMK,Consumer Staples,selected,Weis Markets Inc.,russell2000
+AFRI,Consumer Staples,dropped_lowcov,Forafric Global plc,russell2000
+DNUT,Consumer Staples,dropped_lowcov,Krispy Kreme Inc.,russell2000
+LMNR,Consumer Staples,selected,Limoneira Co.,russell2000
+HAIN,Consumer Staples,selected,Hain Celestial Group Inc.,russell2000
+GRDN,Consumer Staples,dropped_lowcov,Guardian Pharmacy Services Inc. Class A,russell2000
+MZTI,Consumer Staples,selected,Lancaster Colony Corp.,russell2000
+ZVIA,Consumer Staples,selected,Zevia PBC Class A,russell2000
+BRCC,Consumer Staples,selected,BRC Inc. Class A,russell2000
+MGPI,Consumer Staples,selected,MGP Ingredients Inc.,russell2000
+WEST,Consumer Staples,selected,Westrock Coffee Co.,russell2000
+AVO,Consumer Staples,backup,Mission Produce Inc.,russell2000
+FPS,Energy,dropped_lowcov,Forgent Power Solutions Inc. Class A,russell2000
+RIG,Energy,selected,Transocean Ltd.,russell2000
+PBF,Energy,selected,PBF Energy Inc. Class A,russell2000
+EPM,Energy,selected,Evolution Petroleum Corp.,russell2000
+BE,Energy,selected,Bloom Energy Corp. Class A,russell2000
+HPK,Energy,dropped_lowcov,HighPeak Energy Inc.,russell2000
+VAL,Energy,selected,Valaris Ltd.,russell2000
+PUMP,Energy,selected,ProPetro Holding Corp.,russell2000
+BORR,Energy,dropped_lowcov,Borr Drilling Ltd.,russell2000
+NPWR,Energy,dropped_lowcov,Net Power Inc.,russell2000
+FIP,Energy,selected,FTAI Infrastructure Inc.,russell2000
+EP,Energy,selected,Empire Petroleum Corp.,russell2000
+INR,Energy,selected,Infinity Natural Resources Inc. Class A,russell2000
+CNX,Energy,selected,CNX Resources Corp.,russell2000
+APC,Energy,backup,ARKO Petroleum Corp.,russell2000
+RMBI,Financials,selected,Richmond Mutual Bancorporation Inc.,russell2000
+BY,Financials,selected,Byline Bancorp Inc.,russell2000
+RBB,Financials,selected,RBB Bancorp,russell2000
+SFST,Financials,selected,Southern First Bancshares Inc.,russell2000
+WHG,Financials,selected,Westwood Holdings Group Inc.,russell2000
+BTDR,Financials,dropped_lowcov,Bitdeer Technologies Group Class A,russell2000
+PKBK,Financials,selected,Parke Bancorp Inc.,russell2000
+EFSC,Financials,selected,Enterprise Financial Services Corp.,russell2000
+PGC,Financials,selected,Peapack Gladstone Financial Corp.,russell2000
+BSVN,Financials,selected,Bank7 Corp.,russell2000
+LCNB,Financials,selected,LCNB Corp.,russell2000
+SPFI,Financials,backup,South Plains Financial Inc.,russell2000
+ASIC,Financials,backup,Ategrity Specialty Holdings LLC,russell2000
+RPC,Financials,backup,Ridgepost Capital Inc. Class A,russell2000
+PROP,Financials,backup,Prairie Operating Co.,russell2000
+ABUS,Health Care,selected,Arbutus Biopharma Corp.,russell2000
+ELVN,Health Care,dropped_lowcov,Enliven Therapeutics Inc.,russell2000
+TVTX,Health Care,selected,Travere Therapeutics Inc.,russell2000
+WVE,Health Care,selected,WaVe Life Sciences Ltd.,russell2000
+GERN,Health Care,selected,Geron Corp.,russell2000
+TALK,Health Care,dropped_lowcov,Talkspace Inc.,russell2000
+HAE,Health Care,selected,Haemonetics Corp.,russell2000
+EDIT,Health Care,selected,Editas Medicine Inc.,russell2000
+BKD,Health Care,selected,Brookdale Senior Living Inc.,russell2000
+AVIR,Health Care,dropped_lowcov,Atea Pharmaceuticals Inc.,russell2000
+ALLO,Health Care,selected,Allogene Therapeutics Inc.,russell2000
+BBNX,Health Care,selected,Beta Bionics Inc.,russell2000
+AVLN,Health Care,selected,Avalyn Pharma Inc.,russell2000
+SIGA,Health Care,backup,SIGA Technologies Inc.,russell2000
+SPRY,Health Care,backup,ARS Pharmaceuticals Inc.,russell2000
+SXC,Industrials,selected,SunCoke Energy Inc.,russell2000
+MTW,Industrials,selected,Manitowoc Co. Inc.,russell2000
+HRI,Industrials,selected,Herc Holdings Inc.,russell2000
+ASIX,Industrials,selected,AdvanSix Inc.,russell2000
+CMT,Industrials,selected,Core Molding Technologies Inc.,russell2000
+AEHR,Industrials,selected,Aehr Test Systems,russell2000
+PKE,Industrials,selected,Park Aerospace Corp.,russell2000
+AVNT,Industrials,selected,Avient Corp.,russell2000
+WTS,Industrials,selected,Watts Water Technologies Inc. Class A,russell2000
+AVD,Industrials,selected,American Vanguard Corp.,russell2000
+GOLD,Industrials,backup,A-Mark Precious Metals Inc.,russell2000
+MYE,Industrials,backup,Myers Industries Inc.,russell2000
+LUNR,Industrials,backup,Intuitive Machines Inc. Class A,russell2000
+QSI,Industrials,backup,Quantum-Si Inc.,russell2000
+KRT,Industrials,backup,Karat Packaging Inc.,russell2000
+PPTA,Materials,dropped_lowcov,Perpetua Resources Corp.,russell2000
+NB,Materials,dropped_lowcov,NioCorp Developments Ltd.,russell2000
+GSM,Materials,dropped_lowcov,Ferroglobe plc,russell2000
+MAGN,Materials,selected,Magnera Corp.,russell2000
+JELD,Materials,selected,JELD-WEN Holding Inc.,russell2000
+IE,Materials,dropped_lowcov,Ivanhoe Electric Inc. / US,russell2000
+ABAT,Materials,dropped_lowcov,American Battery Technology Co.,russell2000
+RYAM,Materials,selected,Rayonier Advanced Materials Inc.,russell2000
+IDR,Materials,selected,Idaho Strategic Resources Inc.,russell2000
+LZM,Materials,selected,Lifezone Metals Ltd.,russell2000
+UEC,Materials,selected,Uranium Energy Corp.,russell2000
+NL,Materials,selected,NL Industries Inc.,russell2000
+REA,Materials,selected,Rare Earths Americas Inc.,russell2000
+USGO,Materials,selected,US Goldmining Inc.,russell2000
+USAU,Materials,selected,US Gold Corp.,russell2000
+IRT,Real Estate,selected,Independence Realty Trust Inc.,russell2000
+ILPT,Real Estate,dropped_lowcov,Industrial Logistics Properties Trust,russell2000
+FVR,Real Estate,dropped_lowcov,FrontView REIT Inc.,russell2000
+LINC,Real Estate,selected,Lincoln Educational Services Corp.,russell2000
+SITC,Real Estate,selected,SITE Centers Corp.,russell2000
+NLOP,Real Estate,dropped_lowcov,NET Lease Office Properties,russell2000
+STRS,Real Estate,selected,Stratus Properties Inc.,russell2000
+IVR,Real Estate,dropped_lowcov,Invesco Mortgage Capital Inc.,russell2000
+ACRE,Real Estate,selected,Ares Commercial Real Estate Corp.,russell2000
+BHR,Real Estate,selected,Braemar Hotels & Resorts Inc.,russell2000
+FPI,Real Estate,selected,Farmland Partners Inc.,russell2000
+REFI,Real Estate,selected,Chicago Atlantic Real Estate Finance Inc.,russell2000
+UHT,Real Estate,selected,Universal Health Realty Income Trust,russell2000
+SUNS,Real Estate,selected,Sunrise Realty Trust Inc.,russell2000
+CDP,Real Estate,backup,Corporate Office Properties Trust,russell2000
+GRND,Technology,dropped_lowcov,Grindr Inc.,russell2000
+NVTS,Technology,dropped_lowcov,Navitas Semiconductor Corp. Class A,russell2000
+CRDO,Technology,dropped_lowcov,Credo Technology Group Holding Ltd.,russell2000
+BMBL,Technology,selected,Bumble Inc. Class A,russell2000
+BLND,Technology,dropped_lowcov,Blend Labs Inc. Class A,russell2000
+SPT,Technology,selected,Sprout Social Inc. Class A,russell2000
+YEXT,Technology,selected,Yext Inc.,russell2000
+INTA,Technology,dropped_lowcov,Intapp Inc.,russell2000
+ASAN,Technology,selected,Asana Inc.,russell2000
+PAYS,Technology,selected,Paysign Inc.,russell2000
+CRNC,Technology,selected,Cerence Inc.,russell2000
+QBTS,Technology,selected,D-Wave Quantum Inc.,russell2000
+BRZE,Technology,selected,Braze Inc. Class A,russell2000
+MGNI,Technology,selected,Magnite Inc.,russell2000
+VREX,Technology,selected,Varex Imaging Corp.,russell2000
