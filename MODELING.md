@@ -785,3 +785,61 @@ baselines, own-history dominates with macro as a minor shock-concentrated
 contributor, and margins are level-driven — all replicate on companies 10–100×
 smaller. The findings are robust to company size; small caps are simply a
 noisier version of the same structure.
+
+## 10. Pooled training: does adding all 300 companies help?
+
+The three universes were concatenated into one 300-company panel (299 after CIK
+resolution; tickers are disjoint by construction, no overlap leakage) and the
+quarterly zoo re-run on it (`data_pool300/`, outputs via `SP_PANEL_DATA_DIR`).
+The guidance block (`f_guid_*`, S&P 500 only, 0.2% importance) is NaN for small
+caps — trees handle it natively. The honest test is **not** the aggregate
+metric but a matched-row comparison: identical (ticker, quarter) rows predicted
+by a model trained on 100 (standalone) vs 300 (pooled) companies.
+
+**The aggregate-metric trap.** Pooled-300 aggregate RMSE 0.265 / R² 0.39 looks
+*worse* than S&P-500-alone (0.188 / 0.44) — but that is entirely **test-set
+composition** (noisier small caps enter the average), not model degradation.
+Inside the pooled model the S&P 500 rows still score 0.189 / 0.435. A naive read
+of the aggregate would conclude "pooling hurts" — the opposite of the truth.
+
+**Matched-row result** (`data/pool300_vs_standalone.csv`, ensemble; LightGBM
+identical pattern):
+
+| tier | standalone RMSE | pooled-300 RMSE | % change | R² standalone→pooled |
+|---|---:|---:|---:|---:|
+| S&P 500 (data-rich) | 0.188 | 0.189 | +0.4% (flat) | 0.440 → 0.435 |
+| S&P 600 (mid) | 0.291 | 0.278 | **−4.4%** | 0.370 → 0.425 |
+| Russell 2000 (smallest) | 0.326 | 0.322 | −1.2% | 0.320 → 0.330 |
+
+### Key insights
+
+1. **The flagship model is at its data ceiling, not its sample-size ceiling.**
+   Tripling the training data did nothing for the S&P 500 (±0.5%, noise). R²≈0.44
+   is a *structural* limit set by how intrinsically unpredictable quarterly
+   revenue is — not a "need more data" problem. Future mega-cap gains must come
+   from better *signal* (orthogonal features like analyst consensus, §3f/§5),
+   not more rows.
+2. **Transfer flows toward the data-poor.** All the benefit accrued to the tiers
+   that were starved — S&P 600 most (−4–5% RMSE, +0.05 R²), Russell 2000 less,
+   mega caps zero. Pooling is a *small-cap coverage strategy*, not a mega-cap
+   improvement strategy.
+3. **That pooling helps at all is a deep robustness result.** If size tiers had
+   different revenue dynamics, mixing would cause negative transfer and hurt
+   everywhere. Instead it helped small caps and was neutral for large — proof
+   the same machinery (momentum/seasonality/mean-reversion/sector) governs
+   revenue growth across the whole size spectrum. Independent confirmation of §9:
+   there the per-tier models *looked* the same; here they *share training data
+   productively*.
+4. **The middle tier wins most, not the smallest.** S&P 600 sits closest to the
+   center of the pooled distribution and borrows from both neighbors; Russell
+   2000 is the most idiosyncratic and borrows less cleanly. Pooling value tracks
+   how *representative* a tier is, not just how data-poor.
+5. **Discipline lesson.** The aggregate said "worse"; the matched comparison said
+   "neutral-to-better." Same theme as quarter-clustering (§3d) and purging
+   (§3g) — the headline number is a trap; the honest answer needs the comparison
+   held fixed.
+
+**Caveat:** pooling *narrows* the mega-vs-small gap, it doesn't close it. Small
+caps stay harder (RMSE ~0.28–0.32 vs 0.19) because their revenue is genuinely
+noisier — a property of the companies, not the model. Artifacts:
+`data/pool300_zoo_aggregate.csv`, `data/pool300_vs_standalone.csv`.

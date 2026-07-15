@@ -23,4 +23,5 @@ data/
 # + the collection pipeline with SP_PANEL_DATA_DIR/SP_PANEL_UNIVERSE_CSV).
 data_sc600/
 data_r2000/
+data_pool300/
 .Rhistory
