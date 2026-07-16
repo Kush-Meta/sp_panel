@@ -1,0 +1,281 @@
+target,feature,variable,lag,shap_pct_of_model
+quarterly,mac_fed_funds,fed_funds (level),T-1,0.18878262410164792
+quarterly,mac_ust_10y,ust_10y (level),T-1,0.030866578170698187
+quarterly,mac_ust_2y,ust_2y (level),T-1,0.05733524293966132
+quarterly,mac_ust_3m,ust_3m (level),T-1,0.02681494014567443
+quarterly,mac_yield_curve_10y2y,yield_curve_10y2y (level),T-1,0.07657911480425107
+quarterly,mac_cpi,cpi (level),T-1,0.04974385346422491
+quarterly,mac_core_pce,core_pce (level),T-1,0.0
+quarterly,mac_unemployment,unemployment (level),T-1,0.027688442498443377
+quarterly,mac_ism_pmi_proxy,ism_pmi_proxy (level),T-1,0.18291488775320283
+quarterly,mac_retail_sales,retail_sales (level),T-1,0.011936438747522444
+quarterly,mac_consumer_sentiment,consumer_sentiment (level),T-1,0.20824271216431023
+quarterly,mac_vix,vix (level),T-1,0.16737882431476822
+quarterly,mac_baa_spread,baa_spread (level),T-1,0.08284551118086393
+quarterly,mac_usd_index,usd_index (level),T-1,0.028811559606244565
+quarterly,mac_wti_oil,wti_oil (level),T-1,0.11438453926334119
+quarterly,mac_cpi_yoy,cpi (YoY chg),T-1,0.2125792086831173
+quarterly,mac_cpi_qoq,cpi (QoQ chg),T-1,0.10528738851888088
+quarterly,mac_retail_sales_yoy,retail_sales (YoY chg),T-1,0.6659326786968399
+quarterly,mac_retail_sales_qoq,retail_sales (QoQ chg),T-1,0.7730420583665751
+quarterly,mac_ism_pmi_proxy_yoy,ism_pmi_proxy (YoY chg),T-1,0.11963845613596483
+quarterly,mac_ism_pmi_proxy_qoq,ism_pmi_proxy (QoQ chg),T-1,0.2532260377981499
+quarterly,mac_wti_oil_yoy,wti_oil (YoY chg),T-1,0.9024777386920052
+quarterly,mac_wti_oil_qoq,wti_oil (QoQ chg),T-1,0.8201968240532701
+quarterly,mac_usd_index_yoy,usd_index (YoY chg),T-1,0.1850171700432551
+quarterly,mac_usd_index_qoq,usd_index (QoQ chg),T-1,0.24049409853656342
+quarterly,mac_fed_funds_l2,fed_funds (level),T-2,0.2574881776970651
+quarterly,mac_ust_10y_l2,ust_10y (level),T-2,0.08583257738616579
+quarterly,mac_ust_2y_l2,ust_2y (level),T-2,0.04557158514644566
+quarterly,mac_ust_3m_l2,ust_3m (level),T-2,0.5988812808970357
+quarterly,mac_yield_curve_10y2y_l2,yield_curve_10y2y (level),T-2,0.10044350828854415
+quarterly,mac_cpi_l2,cpi (level),T-2,0.0
+quarterly,mac_core_pce_l2,core_pce (level),T-2,0.0
+quarterly,mac_unemployment_l2,unemployment (level),T-2,0.17679781613066825
+quarterly,mac_ism_pmi_proxy_l2,ism_pmi_proxy (level),T-2,0.11592333814321774
+quarterly,mac_retail_sales_l2,retail_sales (level),T-2,0.025635676719382647
+quarterly,mac_consumer_sentiment_l2,consumer_sentiment (level),T-2,0.1150424284982216
+quarterly,mac_vix_l2,vix (level),T-2,0.1689613496910657
+quarterly,mac_baa_spread_l2,baa_spread (level),T-2,0.07431504674182277
+quarterly,mac_usd_index_l2,usd_index (level),T-2,0.03605650797147255
+quarterly,mac_wti_oil_l2,wti_oil (level),T-2,0.2766936960803001
+quarterly,mac_fed_funds_l3,fed_funds (level),T-3,0.0638529032523299
+quarterly,mac_ust_10y_l3,ust_10y (level),T-3,0.19116244237385663
+quarterly,mac_ust_2y_l3,ust_2y (level),T-3,0.0
+quarterly,mac_ust_3m_l3,ust_3m (level),T-3,0.02869353503660536
+quarterly,mac_yield_curve_10y2y_l3,yield_curve_10y2y (level),T-3,0.13431065609397316
+quarterly,mac_cpi_l3,cpi (level),T-3,0.0
+quarterly,mac_core_pce_l3,core_pce (level),T-3,0.0
+quarterly,mac_unemployment_l3,unemployment (level),T-3,0.02825755075789386
+quarterly,mac_ism_pmi_proxy_l3,ism_pmi_proxy (level),T-3,0.40823494576871244
+quarterly,mac_retail_sales_l3,retail_sales (level),T-3,0.0
+quarterly,mac_consumer_sentiment_l3,consumer_sentiment (level),T-3,0.15975896246553178
+quarterly,mac_vix_l3,vix (level),T-3,0.15847667485539826
+quarterly,mac_baa_spread_l3,baa_spread (level),T-3,0.04474057746356575
+quarterly,mac_usd_index_l3,usd_index (level),T-3,0.0428108050520755
+quarterly,mac_wti_oil_l3,wti_oil (level),T-3,0.08719874820101411
+quarterly,mac_fed_funds_l4,fed_funds (level),T-4,0.14239881728304735
+quarterly,mac_ust_10y_l4,ust_10y (level),T-4,0.09805349413918106
+quarterly,mac_ust_2y_l4,ust_2y (level),T-4,0.0634205258161869
+quarterly,mac_ust_3m_l4,ust_3m (level),T-4,0.009943766451511833
+quarterly,mac_yield_curve_10y2y_l4,yield_curve_10y2y (level),T-4,0.03297718291335457
+quarterly,mac_cpi_l4,cpi (level),T-4,0.0
+quarterly,mac_core_pce_l4,core_pce (level),T-4,0.0
+quarterly,mac_unemployment_l4,unemployment (level),T-4,0.12310818003980278
+quarterly,mac_ism_pmi_proxy_l4,ism_pmi_proxy (level),T-4,0.15727118323243044
+quarterly,mac_retail_sales_l4,retail_sales (level),T-4,0.01942693319678697
+quarterly,mac_consumer_sentiment_l4,consumer_sentiment (level),T-4,0.2791878797664214
+quarterly,mac_vix_l4,vix (level),T-4,0.15521672618999952
+quarterly,mac_baa_spread_l4,baa_spread (level),T-4,0.12700588404291238
+quarterly,mac_usd_index_l4,usd_index (level),T-4,0.22693590497546948
+quarterly,mac_wti_oil_l4,wti_oil (level),T-4,0.17231026807464678
+annual,mac_fed_funds,fed_funds (level),T-1,0.044224362771494226
+annual,mac_ust_10y,ust_10y (level),T-1,0.05390469570704417
+annual,mac_ust_2y,ust_2y (level),T-1,0.053486122705669915
+annual,mac_ust_3m,ust_3m (level),T-1,0.01762113994285736
+annual,mac_yield_curve_10y2y,yield_curve_10y2y (level),T-1,0.00940869819055316
+annual,mac_cpi,cpi (level),T-1,0.021830592752257277
+annual,mac_core_pce,core_pce (level),T-1,0.0
+annual,mac_unemployment,unemployment (level),T-1,0.04191516587115703
+annual,mac_ism_pmi_proxy,ism_pmi_proxy (level),T-1,0.4535658682028118
+annual,mac_retail_sales,retail_sales (level),T-1,0.0
+annual,mac_consumer_sentiment,consumer_sentiment (level),T-1,0.1215495240821617
+annual,mac_vix,vix (level),T-1,0.08457736781737765
+annual,mac_baa_spread,baa_spread (level),T-1,0.15029670366872763
+annual,mac_usd_index,usd_index (level),T-1,0.06208556987016132
+annual,mac_wti_oil,wti_oil (level),T-1,0.23186476237336442
+annual,mac_cpi_yoy,cpi (YoY chg),T-1,0.045905091671545835
+annual,mac_cpi_qoq,cpi (QoQ chg),T-1,0.1594683161470863
+annual,mac_retail_sales_yoy,retail_sales (YoY chg),T-1,0.09982290208008515
+annual,mac_retail_sales_qoq,retail_sales (QoQ chg),T-1,0.434725502954458
+annual,mac_ism_pmi_proxy_yoy,ism_pmi_proxy (YoY chg),T-1,0.18023424860997167
+annual,mac_ism_pmi_proxy_qoq,ism_pmi_proxy (QoQ chg),T-1,0.052020890944222985
+annual,mac_wti_oil_yoy,wti_oil (YoY chg),T-1,0.13234617293539327
+annual,mac_wti_oil_qoq,wti_oil (QoQ chg),T-1,0.05062588825813174
+annual,mac_usd_index_yoy,usd_index (YoY chg),T-1,0.2140703699935406
+annual,mac_usd_index_qoq,usd_index (QoQ chg),T-1,0.03955240628026732
+annual,mac_fed_funds_l2,fed_funds (level),T-2,0.09971477689819405
+annual,mac_ust_10y_l2,ust_10y (level),T-2,0.9522799794975411
+annual,mac_ust_2y_l2,ust_2y (level),T-2,0.02394427411256773
+annual,mac_ust_3m_l2,ust_3m (level),T-2,0.15493272791734483
+annual,mac_yield_curve_10y2y_l2,yield_curve_10y2y (level),T-2,0.024152426387360666
+annual,mac_cpi_l2,cpi (level),T-2,0.0
+annual,mac_core_pce_l2,core_pce (level),T-2,0.059793621901445576
+annual,mac_unemployment_l2,unemployment (level),T-2,0.0703942425738763
+annual,mac_ism_pmi_proxy_l2,ism_pmi_proxy (level),T-2,2.9687707300223876
+annual,mac_retail_sales_l2,retail_sales (level),T-2,0.011439093834335149
+annual,mac_consumer_sentiment_l2,consumer_sentiment (level),T-2,0.08953031492260514
+annual,mac_vix_l2,vix (level),T-2,0.07968161383338396
+annual,mac_baa_spread_l2,baa_spread (level),T-2,0.0087723435213291
+annual,mac_usd_index_l2,usd_index (level),T-2,0.04574617790502339
+annual,mac_wti_oil_l2,wti_oil (level),T-2,1.3451798781610753
+annual,mac_fed_funds_l3,fed_funds (level),T-3,0.10580433860651915
+annual,mac_ust_10y_l3,ust_10y (level),T-3,0.07994279252804343
+annual,mac_ust_2y_l3,ust_2y (level),T-3,0.01757134445245802
+annual,mac_ust_3m_l3,ust_3m (level),T-3,0.06430999319934547
+annual,mac_yield_curve_10y2y_l3,yield_curve_10y2y (level),T-3,0.051930419395574065
+annual,mac_cpi_l3,cpi (level),T-3,0.0
+annual,mac_core_pce_l3,core_pce (level),T-3,0.0
+annual,mac_unemployment_l3,unemployment (level),T-3,0.04848523739600469
+annual,mac_ism_pmi_proxy_l3,ism_pmi_proxy (level),T-3,1.2937462215572908
+annual,mac_retail_sales_l3,retail_sales (level),T-3,0.029606023498328575
+annual,mac_consumer_sentiment_l3,consumer_sentiment (level),T-3,0.052092828740981874
+annual,mac_vix_l3,vix (level),T-3,0.06984323805076394
+annual,mac_baa_spread_l3,baa_spread (level),T-3,0.17612046929273645
+annual,mac_usd_index_l3,usd_index (level),T-3,0.13633890674343757
+annual,mac_wti_oil_l3,wti_oil (level),T-3,0.23890026479283513
+annual,mac_fed_funds_l4,fed_funds (level),T-4,0.09395080528599876
+annual,mac_ust_10y_l4,ust_10y (level),T-4,0.20017091903318734
+annual,mac_ust_2y_l4,ust_2y (level),T-4,0.03907138981482187
+annual,mac_ust_3m_l4,ust_3m (level),T-4,0.04080489568746928
+annual,mac_yield_curve_10y2y_l4,yield_curve_10y2y (level),T-4,0.07194938090087502
+annual,mac_cpi_l4,cpi (level),T-4,0.0
+annual,mac_core_pce_l4,core_pce (level),T-4,0.0
+annual,mac_unemployment_l4,unemployment (level),T-4,0.04028439185861395
+annual,mac_ism_pmi_proxy_l4,ism_pmi_proxy (level),T-4,0.05640128732639822
+annual,mac_retail_sales_l4,retail_sales (level),T-4,0.0
+annual,mac_consumer_sentiment_l4,consumer_sentiment (level),T-4,0.07265148984167971
+annual,mac_vix_l4,vix (level),T-4,0.10593154269682531
+annual,mac_baa_spread_l4,baa_spread (level),T-4,0.10532316749433786
+annual,mac_usd_index_l4,usd_index (level),T-4,0.10860236834284194
+annual,mac_wti_oil_l4,wti_oil (level),T-4,0.9667156511113618
+gross-margin,mac_fed_funds,fed_funds (level),T-1,0.019830502343542417
+gross-margin,mac_ust_10y,ust_10y (level),T-1,0.023403091805898373
+gross-margin,mac_ust_2y,ust_2y (level),T-1,0.009195976338790072
+gross-margin,mac_ust_3m,ust_3m (level),T-1,0.007257414504881754
+gross-margin,mac_yield_curve_10y2y,yield_curve_10y2y (level),T-1,0.041710106366988506
+gross-margin,mac_cpi,cpi (level),T-1,0.02952598948719537
+gross-margin,mac_core_pce,core_pce (level),T-1,0.05966041028269355
+gross-margin,mac_unemployment,unemployment (level),T-1,0.009174913217290085
+gross-margin,mac_ism_pmi_proxy,ism_pmi_proxy (level),T-1,0.1369699949070668
+gross-margin,mac_retail_sales,retail_sales (level),T-1,0.013439104343914019
+gross-margin,mac_consumer_sentiment,consumer_sentiment (level),T-1,0.06436826133648889
+gross-margin,mac_vix,vix (level),T-1,0.045603705631545144
+gross-margin,mac_baa_spread,baa_spread (level),T-1,0.02839483717001061
+gross-margin,mac_usd_index,usd_index (level),T-1,0.06494209488424584
+gross-margin,mac_wti_oil,wti_oil (level),T-1,0.12739022013281756
+gross-margin,mac_cpi_yoy,cpi (YoY chg),T-1,0.08671816440874965
+gross-margin,mac_cpi_qoq,cpi (QoQ chg),T-1,0.04038029966110328
+gross-margin,mac_retail_sales_yoy,retail_sales (YoY chg),T-1,0.19140516573902847
+gross-margin,mac_retail_sales_qoq,retail_sales (QoQ chg),T-1,0.026240185357680686
+gross-margin,mac_ism_pmi_proxy_yoy,ism_pmi_proxy (YoY chg),T-1,0.04697408538573213
+gross-margin,mac_ism_pmi_proxy_qoq,ism_pmi_proxy (QoQ chg),T-1,0.0565402794277035
+gross-margin,mac_wti_oil_yoy,wti_oil (YoY chg),T-1,0.2678620979945808
+gross-margin,mac_wti_oil_qoq,wti_oil (QoQ chg),T-1,0.03374039908510915
+gross-margin,mac_usd_index_yoy,usd_index (YoY chg),T-1,0.036250084854552056
+gross-margin,mac_usd_index_qoq,usd_index (QoQ chg),T-1,0.024289180442333733
+gross-margin,mac_fed_funds_l2,fed_funds (level),T-2,0.02126909008543549
+gross-margin,mac_ust_10y_l2,ust_10y (level),T-2,0.009243187382691706
+gross-margin,mac_ust_2y_l2,ust_2y (level),T-2,0.03044297904485576
+gross-margin,mac_ust_3m_l2,ust_3m (level),T-2,0.007904959319631314
+gross-margin,mac_yield_curve_10y2y_l2,yield_curve_10y2y (level),T-2,0.024430730522823144
+gross-margin,mac_cpi_l2,cpi (level),T-2,0.00888850658096112
+gross-margin,mac_core_pce_l2,core_pce (level),T-2,0.0
+gross-margin,mac_unemployment_l2,unemployment (level),T-2,0.014106061859973644
+gross-margin,mac_ism_pmi_proxy_l2,ism_pmi_proxy (level),T-2,0.061543827378521404
+gross-margin,mac_retail_sales_l2,retail_sales (level),T-2,0.0060877734401135674
+gross-margin,mac_consumer_sentiment_l2,consumer_sentiment (level),T-2,0.02945416234769564
+gross-margin,mac_vix_l2,vix (level),T-2,0.07016515415158134
+gross-margin,mac_baa_spread_l2,baa_spread (level),T-2,0.012074260654129249
+gross-margin,mac_usd_index_l2,usd_index (level),T-2,0.04162979006792595
+gross-margin,mac_wti_oil_l2,wti_oil (level),T-2,0.05305251174701033
+gross-margin,mac_fed_funds_l3,fed_funds (level),T-3,0.041104728758868524
+gross-margin,mac_ust_10y_l3,ust_10y (level),T-3,0.010061276244214788
+gross-margin,mac_ust_2y_l3,ust_2y (level),T-3,0.050733033784938285
+gross-margin,mac_ust_3m_l3,ust_3m (level),T-3,0.016931651421975943
+gross-margin,mac_yield_curve_10y2y_l3,yield_curve_10y2y (level),T-3,0.021215030874510044
+gross-margin,mac_cpi_l3,cpi (level),T-3,0.003820312424583996
+gross-margin,mac_core_pce_l3,core_pce (level),T-3,0.0
+gross-margin,mac_unemployment_l3,unemployment (level),T-3,0.01700893597531084
+gross-margin,mac_ism_pmi_proxy_l3,ism_pmi_proxy (level),T-3,0.03769506439044472
+gross-margin,mac_retail_sales_l3,retail_sales (level),T-3,0.0
+gross-margin,mac_consumer_sentiment_l3,consumer_sentiment (level),T-3,0.04512330062737692
+gross-margin,mac_vix_l3,vix (level),T-3,0.03568238057985483
+gross-margin,mac_baa_spread_l3,baa_spread (level),T-3,0.025109703792968244
+gross-margin,mac_usd_index_l3,usd_index (level),T-3,0.023222151993144608
+gross-margin,mac_wti_oil_l3,wti_oil (level),T-3,0.046628045675737397
+gross-margin,mac_fed_funds_l4,fed_funds (level),T-4,0.010915473421273263
+gross-margin,mac_ust_10y_l4,ust_10y (level),T-4,0.02353162683691405
+gross-margin,mac_ust_2y_l4,ust_2y (level),T-4,0.041385019482481765
+gross-margin,mac_ust_3m_l4,ust_3m (level),T-4,0.015289004372768462
+gross-margin,mac_yield_curve_10y2y_l4,yield_curve_10y2y (level),T-4,0.03836925264334476
+gross-margin,mac_cpi_l4,cpi (level),T-4,0.006968488297124121
+gross-margin,mac_core_pce_l4,core_pce (level),T-4,0.0
+gross-margin,mac_unemployment_l4,unemployment (level),T-4,0.0
+gross-margin,mac_ism_pmi_proxy_l4,ism_pmi_proxy (level),T-4,0.034999486134049906
+gross-margin,mac_retail_sales_l4,retail_sales (level),T-4,0.00402845481992509
+gross-margin,mac_consumer_sentiment_l4,consumer_sentiment (level),T-4,0.023756882437955592
+gross-margin,mac_vix_l4,vix (level),T-4,0.06541331225305373
+gross-margin,mac_baa_spread_l4,baa_spread (level),T-4,0.03184104658455307
+gross-margin,mac_usd_index_l4,usd_index (level),T-4,0.02819190440335822
+gross-margin,mac_wti_oil_l4,wti_oil (level),T-4,0.06931302527079435
+ebitda-margin,mac_fed_funds,fed_funds (level),T-1,0.03738206326859204
+ebitda-margin,mac_ust_10y,ust_10y (level),T-1,0.08157752150331392
+ebitda-margin,mac_ust_2y,ust_2y (level),T-1,0.0
+ebitda-margin,mac_ust_3m,ust_3m (level),T-1,0.29264175769310635
+ebitda-margin,mac_yield_curve_10y2y,yield_curve_10y2y (level),T-1,0.10661778479648375
+ebitda-margin,mac_cpi,cpi (level),T-1,0.03346110445616774
+ebitda-margin,mac_core_pce,core_pce (level),T-1,0.0
+ebitda-margin,mac_unemployment,unemployment (level),T-1,0.04263171907052509
+ebitda-margin,mac_ism_pmi_proxy,ism_pmi_proxy (level),T-1,0.01626857758938652
+ebitda-margin,mac_retail_sales,retail_sales (level),T-1,0.03773684739710875
+ebitda-margin,mac_consumer_sentiment,consumer_sentiment (level),T-1,0.1441109062208686
+ebitda-margin,mac_vix,vix (level),T-1,0.2689961426013792
+ebitda-margin,mac_baa_spread,baa_spread (level),T-1,0.10527831316182326
+ebitda-margin,mac_usd_index,usd_index (level),T-1,0.04262717110515186
+ebitda-margin,mac_wti_oil,wti_oil (level),T-1,0.04672489038183819
+ebitda-margin,mac_cpi_yoy,cpi (YoY chg),T-1,0.3740621854922541
+ebitda-margin,mac_cpi_qoq,cpi (QoQ chg),T-1,0.10345102282916098
+ebitda-margin,mac_retail_sales_yoy,retail_sales (YoY chg),T-1,0.07253018330617196
+ebitda-margin,mac_retail_sales_qoq,retail_sales (QoQ chg),T-1,0.18367392513617528
+ebitda-margin,mac_ism_pmi_proxy_yoy,ism_pmi_proxy (YoY chg),T-1,0.11390491865886104
+ebitda-margin,mac_ism_pmi_proxy_qoq,ism_pmi_proxy (QoQ chg),T-1,0.050372438918737175
+ebitda-margin,mac_wti_oil_yoy,wti_oil (YoY chg),T-1,0.10381185235959017
+ebitda-margin,mac_wti_oil_qoq,wti_oil (QoQ chg),T-1,0.11708622330322041
+ebitda-margin,mac_usd_index_yoy,usd_index (YoY chg),T-1,0.22547093957764594
+ebitda-margin,mac_usd_index_qoq,usd_index (QoQ chg),T-1,0.022225137621877014
+ebitda-margin,mac_fed_funds_l2,fed_funds (level),T-2,0.3821856218101073
+ebitda-margin,mac_ust_10y_l2,ust_10y (level),T-2,0.03921176209798896
+ebitda-margin,mac_ust_2y_l2,ust_2y (level),T-2,0.01198472445515815
+ebitda-margin,mac_ust_3m_l2,ust_3m (level),T-2,0.6339420783946951
+ebitda-margin,mac_yield_curve_10y2y_l2,yield_curve_10y2y (level),T-2,0.1584348988679774
+ebitda-margin,mac_cpi_l2,cpi (level),T-2,0.0
+ebitda-margin,mac_core_pce_l2,core_pce (level),T-2,0.0
+ebitda-margin,mac_unemployment_l2,unemployment (level),T-2,0.016150540095462552
+ebitda-margin,mac_ism_pmi_proxy_l2,ism_pmi_proxy (level),T-2,0.3540166690301869
+ebitda-margin,mac_retail_sales_l2,retail_sales (level),T-2,0.01667336667260692
+ebitda-margin,mac_consumer_sentiment_l2,consumer_sentiment (level),T-2,0.1157978115626698
+ebitda-margin,mac_vix_l2,vix (level),T-2,0.3462859541934778
+ebitda-margin,mac_baa_spread_l2,baa_spread (level),T-2,0.03125094411406871
+ebitda-margin,mac_usd_index_l2,usd_index (level),T-2,0.03835321173632819
+ebitda-margin,mac_wti_oil_l2,wti_oil (level),T-2,0.051901453715970276
+ebitda-margin,mac_fed_funds_l3,fed_funds (level),T-3,0.36319092120914603
+ebitda-margin,mac_ust_10y_l3,ust_10y (level),T-3,0.2289151255881346
+ebitda-margin,mac_ust_2y_l3,ust_2y (level),T-3,0.01608324768284938
+ebitda-margin,mac_ust_3m_l3,ust_3m (level),T-3,0.3341624359913534
+ebitda-margin,mac_yield_curve_10y2y_l3,yield_curve_10y2y (level),T-3,0.18822353654697085
+ebitda-margin,mac_cpi_l3,cpi (level),T-3,0.031504658462070914
+ebitda-margin,mac_core_pce_l3,core_pce (level),T-3,0.0
+ebitda-margin,mac_unemployment_l3,unemployment (level),T-3,0.017611138052780816
+ebitda-margin,mac_ism_pmi_proxy_l3,ism_pmi_proxy (level),T-3,0.23877683429846555
+ebitda-margin,mac_retail_sales_l3,retail_sales (level),T-3,0.0
+ebitda-margin,mac_consumer_sentiment_l3,consumer_sentiment (level),T-3,0.10597389158764126
+ebitda-margin,mac_vix_l3,vix (level),T-3,0.07262824409586092
+ebitda-margin,mac_baa_spread_l3,baa_spread (level),T-3,0.10511956822583583
+ebitda-margin,mac_usd_index_l3,usd_index (level),T-3,0.09759869659532877
+ebitda-margin,mac_wti_oil_l3,wti_oil (level),T-3,0.0698327730601351
+ebitda-margin,mac_fed_funds_l4,fed_funds (level),T-4,0.5159290899555878
+ebitda-margin,mac_ust_10y_l4,ust_10y (level),T-4,0.34864989521372064
+ebitda-margin,mac_ust_2y_l4,ust_2y (level),T-4,0.009388482487451331
+ebitda-margin,mac_ust_3m_l4,ust_3m (level),T-4,0.035638671091761547
+ebitda-margin,mac_yield_curve_10y2y_l4,yield_curve_10y2y (level),T-4,0.23341477897372942
+ebitda-margin,mac_cpi_l4,cpi (level),T-4,0.0
+ebitda-margin,mac_core_pce_l4,core_pce (level),T-4,0.0
+ebitda-margin,mac_unemployment_l4,unemployment (level),T-4,0.03425774895536968
+ebitda-margin,mac_ism_pmi_proxy_l4,ism_pmi_proxy (level),T-4,0.2972000906562042
+ebitda-margin,mac_retail_sales_l4,retail_sales (level),T-4,0.009790748976653012
+ebitda-margin,mac_consumer_sentiment_l4,consumer_sentiment (level),T-4,0.0518262207648003
+ebitda-margin,mac_vix_l4,vix (level),T-4,0.29752661602990293
+ebitda-margin,mac_baa_spread_l4,baa_spread (level),T-4,0.03894047674331854
+ebitda-margin,mac_usd_index_l4,usd_index (level),T-4,0.053677356907584906
+ebitda-margin,mac_wti_oil_l4,wti_oil (level),T-4,0.0921450410141903

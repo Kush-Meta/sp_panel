@@ -224,7 +224,7 @@ def add_sector_features(panel):
     return panel
 
 
-def add_macro_features(panel, macro, macro_lag=1):
+def add_macro_features(panel, macro, macro_lag=1, extra_lags=()):
     if macro is None or macro.empty:
         return panel
     m = macro.copy()
@@ -238,7 +238,16 @@ def add_macro_features(panel, macro, macro_lag=1):
             feat[f"mac_{c}_qoq"] = m[c].pct_change(1, fill_method=None)
     mf = pd.DataFrame(feat)
     mf["target_quarter"] = (mf.index + macro_lag).astype(str)   # macro from s informs s+lag
-    return panel.merge(mf.reset_index(drop=True), on="target_quarter", how="left")
+    panel = panel.merge(mf.reset_index(drop=True), on="target_quarter", how="left")
+    # Optional deeper lag ladder (levels only): mac_<name>_l<k> is the level
+    # from quarter T-k. Built for the lag-structure analysis (MODELING §3i),
+    # not part of the default panel — quarterly macro levels are slow-moving,
+    # so deeper lags are near-duplicates and would dilute default importance.
+    for k in extra_lags:
+        lf = pd.DataFrame({f"mac_{c}_l{k}": m[c] for c in cols})
+        lf["target_quarter"] = (lf.index + k).astype(str)
+        panel = panel.merge(lf.reset_index(drop=True), on="target_quarter", how="left")
+    return panel
 
 
 def add_market_features(panel, prices, risk, benchmarks):
@@ -474,7 +483,8 @@ def add_bea_features(panel, bea, quarter_lag=1):
 # ---------------------------------------------------------------------------
 # 4. Assemble
 # ---------------------------------------------------------------------------
-def build_panel(start="2011Q1", feature_lag=1, macro_lag=1, winsor=(0.01, 0.99),
+def build_panel(start="2011Q1", feature_lag=1, macro_lag=1, macro_extra_lags=(),
+                winsor=(0.01, 0.99),
                 with_market=True, with_bea=True, with_guidance=True, min_coverage=0.6):
     fin = _load("financials_quarterly")
     uni = _load("universe_cik")
@@ -564,7 +574,8 @@ def build_panel(start="2011Q1", feature_lag=1, macro_lag=1, winsor=(0.01, 0.99),
 
     panel = add_sector_features(panel)
     panel["bl_sector_median"] = panel["f_sector_yoy_median"]
-    panel = add_macro_features(panel, _load("macro_quarterly"), macro_lag=macro_lag)
+    panel = add_macro_features(panel, _load("macro_quarterly"), macro_lag=macro_lag,
+                               extra_lags=macro_extra_lags)
     panel = add_industry_demand(panel, _load("macro_quarterly"), macro_lag=macro_lag)
     panel = add_filing_event_features(panel, _load("filing_event_study"),
                                       feature_lag=feature_lag)

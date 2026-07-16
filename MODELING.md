@@ -421,6 +421,43 @@ recurs: persistence still wins the *median* quarter (2.4 vs 3.5 points), the
 model wins the tails. Outputs: `model_metrics_*_{gm,em}_annual.csv`,
 `model_metrics_full_summary_{gm,em}_annual.csv`.
 
+## 3i. Macro lag structure: which delay carries the signal?
+
+The default panel takes each macro variable at one fixed lag (quarter T−1).
+To test whether that throws information away, `add_macro_features` gained an
+`extra_lags` option that adds each macro *level* at T−2/T−3/T−4
+(`mac_<name>_l<k>`, 45 columns; `build_panel(macro_extra_lags=(2,3,4))`,
+panel saved as `panel_maclag.parquet`). Same paired quarter-clustered
+protocol; annual purged with NW lags 4.
+
+| target | RMSE lag-1 only | + lag ladder | Δ | DM p | quarters better |
+|---|---:|---:|---:|---:|---:|
+| quarterly | 0.1889 | 0.1880 | +0.0009 | 0.22 | 25/49 |
+| **annual** | 0.2367 | 0.2348 | **+0.0018** | **0.047** | **30/47** |
+
+**Deeper macro lags significantly help the annual model** — the second macro
+result to clear 5% significance at that horizon (after activity_demand, §3g) —
+and do nothing for the quarterly one. The lag-usage breakdown (mean |SHAP|
+share of the macro block) explains why:
+
+| lag bucket | quarterly | annual |
+|---|---:|---:|
+| lag 1 — changes (momentum) | **40.5%** | 10.9% |
+| lag 1 — levels | 11.9% | 10.4% |
+| lag 2 | 19.7% | **45.8%** |
+| lag 3 | 12.7% | 18.3% |
+| lag 4 | 15.2% | 14.7% |
+
+The quarterly model wants *fresh macro momentum* (top macro features: oil and
+retail-sales changes, all lag-1); the annual model wants the *macro state from
+2–4 quarters back* (top features: industrial production and oil levels at l2–l4,
+10y yield at l2 — nearly 80% of its macro attention sits at lag ≥ 2). That is
+the classic transmission-delay picture: activity indicators lead revenue with a
+~2-quarter delay that only becomes visible at the annual horizon.
+**Recommendation:** keep the single-lag block for the quarterly model; add the
+lag ladder to the annual configuration. Outputs: `macro_lag_ablation.csv`,
+`macro_lag_importance.csv`.
+
 ## 4. Should you use / fine-tune an LLM?
 
 **No, not for the prediction.** This is a structured-numeric forecasting problem;
@@ -680,6 +717,39 @@ it describes the model, it does not by itself justify inclusion.
 | `sec_Materials` | sector identity | 0.00 | 0.00 | 2.20 | 0.00 |
 | `sec_Real Estate` | sector identity | 0.00 | 0.21 | 0.01 | 1.81 |
 | `sec_Technology` | sector identity | 0.00 | 0.03 | 2.18 | 0.00 |
+
+## 8c. Importance three ways: gain vs SHAP vs permutation
+
+Gain is one lens; the two industry-standard alternatives were computed on the
+production quarterly model (`feature_importance_methods.csv`):
+
+- **TreeSHAP (mean |SHAP|)** — for every prediction, exactly attribute the
+  output to each feature (Shapley values, computed natively by LightGBM via
+  `pred_contrib`). The de-facto standard for model explanation in
+  finance/credit-risk validation. Measures *prediction-time* influence, where
+  gain measures *training-time* loss reduction.
+- **Permutation importance** — shuffle one column on a chronological holdout
+  (train ≤2021Q4, test 2022+, 10 repeats) and measure the RMSE damage. Fully
+  model-agnostic and the most "out-of-sample" of the three, but it punishes
+  correlated features: shuffling one macro column while its near-duplicates
+  survive leaks the signal through, so redundant blocks score near zero.
+
+**The ranking is robust where it matters.** The top-3 are identical under all
+three methods (`f_lag_yoy_1`, `f_qoq_mean_4`, `f_lag_yoy_4` — last-known
+growth, recent momentum, seasonal lag), 8/10 of the gain top-10 are in the
+SHAP top-10, and rank agreement is Spearman 0.96 (gain↔SHAP) / ~0.66
+(either↔permutation). Permutation concentrates even harder on the top three
+(~71% of all importance) because only features with *unique* information
+survive shuffling.
+
+**The macro block under each lens: gain 6.0%, SHAP 7.5%, permutation 1.2%.**
+That spread is the §8 caveat made visible — macro columns are consulted by the
+trees (gain/SHAP) but carry little unique out-of-sample information
+(permutation), which is precisely what the ablations (§3d) concluded by an
+independent route. Method guidance: present **SHAP** as the headline ranking
+(industry-standard, prediction-grounded), **permutation** as the "unique
+information" check, and **ablation** (§3d–3g) as the decision tool for
+including/excluding feature groups.
 
 ## 9. Out-of-universe validation: do the results hold on small caps?
 
