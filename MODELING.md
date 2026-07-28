@@ -1006,6 +1006,50 @@ on small caps); inference adds a 200M-parameter model to the serving path.
 Artifacts: `timesfm_ladder.csv`, `timesfm_dm_tests.csv`,
 `timesfm_guard_data.csv`, `model_predictions_timesfm_{level,log,yoy}.parquet`.
 
+### 11b. The annual horizon: the blend generalises, the mechanism clarifies
+
+Same treatment applied to `revenue_annual_target` (§3g): forecast 4 quarters
+of log-revenue, exponentiate, sum to a forward TTM, divide by the trailing
+TTM (`timesfm_eval --arm annual`; analysis `tfm_robust --annual`). Each
+universe is compared against *its own* best annual model, and DM tests use
+Newey–West lags = 4 because annual windows at quarterly origins overlap by
+three quarters.
+
+| universe | best annual model | TimesFM raw | **blend 50/50** | Δ | DM p |
+|---|---|---:|---:|---:|---:|
+| S&P 500 | 0.2282 (random forest) | 0.2374 | **0.2193** | −3.9% | **0.0009** |
+| S&P 600 | 0.2684 (elasticnet) | 0.2709 | **0.2540** | −5.4% | **0.017** |
+| Russell 2000 | 0.3404 (random forest) | 0.3509 | **0.3319** | −2.5% | **0.034** |
+
+**The blend wins significantly on all three — six independent significant
+wins now (3 universes × 2 horizons).** Three observations sharpen what is
+actually going on:
+
+1. **TimesFM alone does *not* beat the annual models** (behind on all three,
+   none significant), unlike the quarterly horizon where it beat both
+   small-cap ensembles outright. Compounding explains it: errors in step 1
+   propagate through the 4-quarter sum, so the univariate edge erodes with
+   horizon.
+2. **Yet the blend still wins** — the cleanest evidence that the gain comes
+   from *decorrelated errors*, not from one model being stronger. A blend can
+   beat both members when neither dominates.
+3. **The guard becomes irrelevant** (fires on 2 rows for the S&P 500, zero
+   elsewhere): summing four log-forecasts is self-damping, so the scale-break
+   blowups that dominate the single-quarter level arm largely wash out.
+
+Gains are smaller than quarterly (−2.5 to −5.4% vs −11 to −14%), consistent
+with annual growth being mostly mean-reversion that the GBMs already capture.
+
+**Limitation, stated rather than buried:** the 2024+ clean-window DM tests
+return `nan` at this horizon on all three universes — 7 quarters of
+overlapping annual windows with NW lags = 4 leaves the long-run variance
+estimator without enough independent observations. Point estimates there
+favour the blend on S&P 500 (0.119 vs 0.129) and Russell 2000 and are flat on
+S&P 600, but **no post-pretraining-era significance claim is supportable at
+the annual horizon**. The 2014–2023 sub-window is significant everywhere
+(p = 0.002–0.029). Artifact:
+`model_predictions_timesfm_annual.parquet` (per universe).
+
 ## 12. Conformal calibration: honest prediction intervals
 
 The raw LightGBM p10–p90 band claimed 80% and delivered **71%** (§3b) —
