@@ -973,21 +973,38 @@ catastrophic, and confined to companies whose reported revenue series are
 discontinuous, which a univariate model cannot detect and our feature pipeline
 flags automatically. That makes the two complementary rather than rival:
 
-1. **Highest-value next step (not fine-tuning): guard the tail.** Reject or
-   fall back to persistence when a TimesFM forecast exceeds the trailing
-   range by a large multiple. Ten rows are the entire gap; a crude sanity
-   filter should hand back a model that beats the ensemble outright.
-2. **Then test a blend** (e.g. average of guarded-TimesFM and ensemble) — the
-   two make different errors, which is the precondition for blending to work.
-3. **Fine-tuning stays low priority.** The gap that remains after guarding is
-   informational (M&A, guidance, sector context), not architectural.
+**The tail-guard + blend, tested (`timesfm_guard.py`, `tfm_robust.py`).**
+The guard: fall back to persistence when |implied growth| exceeds k× the
+company's own historical max |YoY| (causal, one parameter). The blend: 50/50
+guarded-TimesFM + ensemble. Because the guard was designed after seeing S&P
+500 failures, the S&P 500 numbers are in-window; the two validation universes
+(§9) and the 2024+ era are the honest tests. Results (blend vs ensemble RMSE,
+quarter-clustered DM):
 
-Caveat on all of the above: the tail-guard and blend are *hypotheses implied
-by this decomposition*, not yet tested — and testing them on the same 49
-quarters that motivated them risks overfitting the evaluation window; a
-guarded rerun should be judged on the 2024+ window and on the out-of-universe
-panels (§9). Artifacts: `timesfm_ladder.csv`, `timesfm_dm_tests.csv`,
-`model_predictions_timesfm_{level,log,yoy}.parquet`.
+| universe | ensemble | blend | Δ | DM p | 2024+ window |
+|---|---:|---:|---:|---:|---|
+| S&P 500 (in-window) | 0.187 | 0.166 | −11% | 0.036 | parity (0.125 vs 0.127) |
+| S&P 600 (out-of-design) | 0.277 | 0.237 | **−14%** | **0.0001** | −17%, p=0.077 |
+| Russell 2000 (out-of-design) | 0.303 | 0.264 | **−13%** | **<0.0001** | −11%, p=0.11 |
+
+Robustness: the blend beats the ensemble at *every* guard threshold k
+(including no guard at all — the blend itself halves any blowup), the blend
+weight is flat between 0.3 and 0.7, and significance is *strongest on the
+universes the rule was never designed against* — the opposite of an overfit
+result. Raw TimesFM even beats the small-cap ensembles outright (SC600 0.253
+vs 0.277; R2000 0.291 vs 0.303): the foundation model helps most exactly where
+the GBM has the least training data. Mechanism: the two models make
+decorrelated errors (different information, different architecture), so
+averaging wins; the guard is cheap insurance on top (S&P 500: 0.172 → 0.166).
+
+**Recommended production change: `0.5 × guarded-TimesFM (k=3) + 0.5 ×
+ensemble`** — a consistent −11 to −14% RMSE across all three universes, the
+largest single accuracy improvement found in this project. Fine-tuning stays
+unnecessary: zero-shot inside a blend already delivers the gain. Remaining
+caveats: the 2024+ windows are only 9 quarters (parity on S&P 500, favorable
+on small caps); inference adds a 200M-parameter model to the serving path.
+Artifacts: `timesfm_ladder.csv`, `timesfm_dm_tests.csv`,
+`timesfm_guard_data.csv`, `model_predictions_timesfm_{level,log,yoy}.parquet`.
 
 ## 12. Conformal calibration: honest prediction intervals
 
