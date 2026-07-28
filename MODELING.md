@@ -930,24 +930,34 @@ clipped to the target's own sanity band [−0.95, 3.0] (0.3% of level-arm rows
 explode on one REIT's scale-broken series — AVB, up to +67,000% — a failure
 mode features would flag and a univariate model cannot).
 
-**Result: startlingly competitive, but not better — and the apparent wins
-don't survive scrutiny.**
+**Result: better than our model on ~99.8% of forecasts, and worse overall —
+because 10 catastrophic rows dominate RMSE.** (An earlier revision of this
+section concluded "competitive but not better"; that read the RMSE headline
+without decomposing it, and was wrong. Corrected below.)
 
-- On the widest paired row set (4,212 forecasts), best arm (log-revenue):
-  RMSE 0.208 vs ensemble 0.187 — ensemble ahead, difference insignificant
-  (DM p = 0.41). On an easier common subset the point estimate even flips in
-  TimesFM's favor (0.159 vs 0.174) — but that flip is *subset selection*, not
-  skill: the rows TimesFM's stricter context requirements drop are exactly
-  the short/broken-history rows where it fails worst.
-- **The clean-window test is decisive.** TimesFM's pretraining corpus runs
-  through roughly its 2025 release, so 2014–2023 results may benefit from
-  having "seen" the era (if not these exact series). In the only provably
-  uncontaminated window (2024+): **ensemble 0.127 vs TimesFM 0.177, DM
-  p = 0.048, TimesFM better in 3/9 quarters** — the feature model wins
-  significantly exactly where contamination is impossible.
+- **On the error distribution, TimesFM wins nearly everywhere.** Paired on
+  4,212 forecasts, absolute error percentiles (TimesFM vs ensemble): median
+  **0.039 / 0.041**, 75th **0.084 / 0.093**, 90th **0.179 / 0.203**, 95th
+  **0.287 / 0.333**, 99th **0.774 / 0.800**, mean AE **0.085 / 0.090**. It is
+  closer on 51% of individual rows and better at every percentile up to the
+  99th.
+- **Yet RMSE says the opposite: 0.208 vs 0.187 — and 10 rows explain all of
+  it.** Those 10 rows (0.24% of the sample) contribute 221% of the total
+  excess squared error; drop them and TimesFM leads decisively,
+  **0.157 vs 0.187**. Nine of the ten are the model predicting the clip
+  ceiling (+300%) against realized growth near zero, on REITs and
+  restructured industrials whose reported revenue series contain scale breaks
+  (AVB, AMT, CCI, GE, OXY). RMSE squares errors, so a handful of +300%
+  forecasts outweighs thousands of better ones.
+- **This also overturns the "clean window" conclusion.** In 2024+ (post
+  pretraining corpus) RMSE favours the ensemble 0.127 vs 0.177 — but MAE is
+  **0.063 vs 0.066** and median AE **0.032 vs 0.034**, i.e. near-parity with a
+  slight ensemble edge. The RMSE gap there is again two blowup rows (AMT
+  2024Q1, OXY 2024Q4). The honest statement is *near-parity on typical
+  accuracy, with TimesFM carrying tail risk* — not "the feature model wins
+  significantly."
 - Pretraining does transfer: TimesFM beats seasonal (p = 0.0001) and edges
-  persistence (p = 0.08), and its raw MAE/median are excellent — it is a very
-  good *typical-quarter* univariate forecaster.
+  persistence (p = 0.08), and its typical-quarter accuracy is excellent.
 - The univariate blind spot is measurable: RMSE 0.205 on rows with an
   acquisition in the trailing year vs 0.155 without — it cannot know about
   M&A, guidance, or sector context.
@@ -957,14 +967,27 @@ don't survive scrutiny.**
   takes ours to 0.80 — past TimesFM's — using our own model, no foundation
   model in the production path.**
 
-**Verdict:** zero-shot TimesFM ≈ the univariate-GBM rung of the ladder
-(architecture and 100B pretraining points ≈ 25 hand-built lag features), and
-the full feature model stays on top where it counts. Fine-tuning (LoRA via
-PEFT is now officially supported) is unlikely to close a gap that is
-*informational* rather than architectural — the model lacks features, not
-capacity — so Phase 3 is optional; the calibration transplant is the
-higher-value follow-up **(done — §12)**. Artifacts: `timesfm_ladder.csv`,
-`timesfm_dm_tests.csv`, `model_predictions_timesfm_{level,log,yoy}.parquet`.
+**Verdict:** zero-shot TimesFM is a **better typical-quarter forecaster than
+our feature model** and a **more dangerous one** — its failure mode is rare,
+catastrophic, and confined to companies whose reported revenue series are
+discontinuous, which a univariate model cannot detect and our feature pipeline
+flags automatically. That makes the two complementary rather than rival:
+
+1. **Highest-value next step (not fine-tuning): guard the tail.** Reject or
+   fall back to persistence when a TimesFM forecast exceeds the trailing
+   range by a large multiple. Ten rows are the entire gap; a crude sanity
+   filter should hand back a model that beats the ensemble outright.
+2. **Then test a blend** (e.g. average of guarded-TimesFM and ensemble) — the
+   two make different errors, which is the precondition for blending to work.
+3. **Fine-tuning stays low priority.** The gap that remains after guarding is
+   informational (M&A, guidance, sector context), not architectural.
+
+Caveat on all of the above: the tail-guard and blend are *hypotheses implied
+by this decomposition*, not yet tested — and testing them on the same 49
+quarters that motivated them risks overfitting the evaluation window; a
+guarded rerun should be judged on the 2024+ window and on the out-of-universe
+panels (§9). Artifacts: `timesfm_ladder.csv`, `timesfm_dm_tests.csv`,
+`model_predictions_timesfm_{level,log,yoy}.parquet`.
 
 ## 12. Conformal calibration: honest prediction intervals
 
