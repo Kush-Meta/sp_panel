@@ -1,0 +1,5 @@
+vs,rmse_other,rmse_timesfm,dm_stat,p_value,quarters_timesfm_better,n_q
+bl: persistence,0.2135,0.1679,1.7782,0.0817,30,49
+bl: seasonal,0.3323,0.1679,4.2927,0.0001,48,49
+gbm_univariate (own-history),0.1755,0.1679,0.5183,0.6066,30,49
+ensemble (full 86 feats),0.1737,0.1679,0.3822,0.704,30,49

@@ -163,11 +163,12 @@ intervals instead of a bare point estimate:
 |---|---:|---:|---:|---:|---:|
 | 80% (p10–p90) | **0.71** | 0.216 (±11pp) | 0.045 | 0.090 | 0.83 |
 
-The 80% interval **under-covers (71%)** — the intervals are a touch too narrow
-out-of-sample, a known tendency of quantile GBMs under regime shifts. A conformal
-calibration wrapper would restore nominal coverage and is the recommended next step
-for production use. Outputs: `model_quantile_calibration.csv`,
-`model_quantile_predictions.parquet`, `model_guidance_ablation.csv`.
+The raw 80% interval **under-covers (71%)** — the intervals are a touch too
+narrow out-of-sample, a known tendency of quantile GBMs under regime shifts.
+**This is now fixed by conformal calibration (§12): coverage 0.80 on the nose,
+and better by the proper interval score, not merely wider.** Outputs:
+`model_quantile_calibration.csv`, `model_quantile_predictions.parquet`,
+`model_guidance_ablation.csv`.
 
 ## 3c. Mixture-of-experts gate (tested, not adopted)
 
@@ -475,8 +476,9 @@ pipeline, not a replacement.
    industry benchmark. Management guidance (§3b) is too sparse/noisy to help; pull a
    dense numeric estimate feed (IBES / Visible Alpha, or Alpha Vantage estimates →
    `analyst_estimates.parquet`) and model the *surprise vs consensus*.
-2. **Conformal-calibrate the quantile intervals** (§3b) — the 80% band currently
-   under-covers (71%); a split-conformal wrapper restores nominal coverage.
+2. ~~**Conformal-calibrate the quantile intervals**~~ — **done (§12)**: CQR
+   lifts coverage 0.71 → 0.80 and improves the Winkler interval score
+   (p = 0.004); the sector-conditional variant makes per-sector bands honest.
 3. **`--first-reported` re-pull** so features can use T−1 data the moment it is
    actually released (a true post-earnings nowcast) instead of a conservative lag.
 4. **Sector-specialist models / commodity features** for the hard sectors (Energy).
@@ -913,3 +915,116 @@ identical pattern):
 caps stay harder (RMSE ~0.28–0.32 vs 0.19) because their revenue is genuinely
 noisier — a property of the companies, not the model. Artifacts:
 `data/pool300_zoo_aggregate.csv`, `data/pool300_vs_standalone.csv`.
+
+## 11. TimesFM: a time-series foundation model vs the feature model
+
+Google's TimesFM 2.5 (200M-parameter pretrained forecaster,
+`google/timesfm-2.5-200m-pytorch`) was evaluated **zero-shot** on the
+quarterly task: for each test quarter, each company's clean revenue history
+strictly before that quarter is fed to the model, which forecasts the next
+level; implied YoY = forecast / revenue(T−4) − 1. TimesFM is *univariate* —
+it sees one series and nothing else — so the comparison ladder includes an
+own-history-only LightGBM (`gbm_univariate`) as the equal-information rung.
+Harness: `python -m sp_panel.timesfm_eval --arm {level,log,yoy}`; predictions
+clipped to the target's own sanity band [−0.95, 3.0] (0.3% of level-arm rows
+explode on one REIT's scale-broken series — AVB, up to +67,000% — a failure
+mode features would flag and a univariate model cannot).
+
+**Result: startlingly competitive, but not better — and the apparent wins
+don't survive scrutiny.**
+
+- On the widest paired row set (4,212 forecasts), best arm (log-revenue):
+  RMSE 0.208 vs ensemble 0.187 — ensemble ahead, difference insignificant
+  (DM p = 0.41). On an easier common subset the point estimate even flips in
+  TimesFM's favor (0.159 vs 0.174) — but that flip is *subset selection*, not
+  skill: the rows TimesFM's stricter context requirements drop are exactly
+  the short/broken-history rows where it fails worst.
+- **The clean-window test is decisive.** TimesFM's pretraining corpus runs
+  through roughly its 2025 release, so 2014–2023 results may benefit from
+  having "seen" the era (if not these exact series). In the only provably
+  uncontaminated window (2024+): **ensemble 0.127 vs TimesFM 0.177, DM
+  p = 0.048, TimesFM better in 3/9 quarters** — the feature model wins
+  significantly exactly where contamination is impossible.
+- Pretraining does transfer: TimesFM beats seasonal (p = 0.0001) and edges
+  persistence (p = 0.08), and its raw MAE/median are excellent — it is a very
+  good *typical-quarter* univariate forecaster.
+- The univariate blind spot is measurable: RMSE 0.205 on rows with an
+  acquisition in the trailing year vs 0.155 without — it cannot know about
+  M&A, guidance, or sector context.
+- **One thing it does better than us: uncertainty.** Its native p10–p90
+  interval covers 75.3% (nominal 80%) vs our LightGBM quantiles' 71% —
+  better calibrated out of the box. **Acted on: §12 conformal calibration
+  takes ours to 0.80 — past TimesFM's — using our own model, no foundation
+  model in the production path.**
+
+**Verdict:** zero-shot TimesFM ≈ the univariate-GBM rung of the ladder
+(architecture and 100B pretraining points ≈ 25 hand-built lag features), and
+the full feature model stays on top where it counts. Fine-tuning (LoRA via
+PEFT is now officially supported) is unlikely to close a gap that is
+*informational* rather than architectural — the model lacks features, not
+capacity — so Phase 3 is optional; the calibration transplant is the
+higher-value follow-up **(done — §12)**. Artifacts: `timesfm_ladder.csv`,
+`timesfm_dm_tests.csv`, `model_predictions_timesfm_{level,log,yoy}.parquet`.
+
+## 12. Conformal calibration: honest prediction intervals
+
+The raw LightGBM p10–p90 band claimed 80% and delivered **71%** (§3b) —
+quantile regression fits quantiles on *training* data, and nothing forces them
+to hold out of sample. `sp_panel/conformal.py` fixes this without retraining
+via **Conformalized Quantile Regression** (Romano/Patterson/Candès 2019):
+score each past forecast by its signed distance to the nearest band edge
+(`E = max(lo−y, y−hi)`), take the ⌈(n+1)(1−α)⌉-th smallest score `Q`, and
+publish `[lo−Q, hi+Q]`. If the band under-covers, `Q > 0` and it widens; if it
+over-covers, `Q < 0` and it **tightens** — calibration, not padding.
+
+Time-series discipline: conformal's guarantee assumes calibration and test
+scores are exchangeable, which regime shifts break. So every variant here
+calibrates **only on quarters strictly before the test quarter** — the same
+walk-forward rule as the rest of the pipeline. Run: `python -m sp_panel.conformal`.
+
+| method | coverage | mean width | Winkler ↓ | ΔWinkler vs raw | DM p |
+|---|---:|---:|---:|---:|---:|
+| raw (uncalibrated) | 0.712 | 0.216 | 0.4920 | — | — |
+| cqr_expanding | 0.797 | 0.249 | **0.4862** | +0.0058 | **0.004** |
+| aci (adaptive α) | **0.799** | 0.251 | 0.4864 | +0.0056 | 0.007 |
+| cqr_rolling (8q) | 0.797 | 0.254 | 0.4868 | +0.0052 | 0.022 |
+| cqr_sector (Mondrian) | 0.796 | 0.256 | 0.4868 | +0.0051 | 0.086 |
+
+**Coverage is fixed — and the intervals are genuinely better, not just wider.**
+That distinction matters: any band can hit 80% by inflating, so the honest
+test is the **Winkler interval score** (width plus a penalty for misses; the
+proper scoring rule for intervals). Winkler *improves* under every method, and
+the improvement is significant under the same quarter-clustered DM test used
+everywhere else (p = 0.004 for the expanding variant). Cost of honesty: bands
+~15% wider (0.216 → 0.249).
+
+**Marginal coverage isn't enough — sector-conditional coverage is the real
+prize.** A single global adjustment fixes the *average* but leaves fat-tailed
+sectors under-covered, because it splits the difference between Energy and
+Consumer Staples:
+
+| | worst sector | max \|dev from 0.80\| | sector spread |
+|---|---|---:|---:|
+| raw | Materials 0.687 | 0.113 | 0.070 |
+| cqr_expanding / rolling / aci | **Energy 0.725–0.730** | 0.070–0.075 | 0.134–0.141 |
+| **cqr_sector** | Cons. Disc. 0.773 | **0.027** | **0.044** |
+
+Only the Mondrian (per-sector) variant makes every sector's band honest —
+Energy goes 0.725 → 0.813. Its Winkler is statistically indistinguishable from
+the global variants (0.4868 vs 0.4862, a 0.1% efficiency cost; the weaker
+p-value reflects noisier per-group calibration sets, not worse intervals).
+**Recommended default: `cqr_sector`.** Anyone forecasting a single Energy name
+is otherwise handed a band that claims 80% and delivers 72.5%.
+
+**Known limitation, stated honestly:** conformal calibrates on the past, so a
+regime break it has never seen still breaks it. 2020 remains under-covered
+(0.628 → 0.700) — better, not solved. Conversely 2024–25 run slightly
+over-covered (~0.85), the price of adapting to a calmer recent regime. ACI
+exists to chase exactly this drift and lands closest to nominal overall
+(0.799).
+
+Footnote to §11: our calibrated band (0.796–0.799) now beats zero-shot
+TimesFM's native calibration (0.753) — the one dimension where the foundation
+model led is closed, with our own model. Artifacts:
+`conformal_calibration.csv`, `conformal_by_sector.csv`,
+`conformal_schedule_*.csv`, `model_quantile_calibrated_*.parquet`.
