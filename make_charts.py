@@ -71,21 +71,38 @@ def chart_heatmap():
              "Fed funds rate": "Fed funds\nrate", "VIX": "VIX", "Unemployment": "Unemploy-\nment"}
     ax.set_xticks(range(len(c["macros"])))
     ax.set_xticklabels([SHORT.get(m, m) for m in c["macros"]],
-                       fontsize=9.5, color=INK2, linespacing=1.35)
+                       fontsize=11.5, color=INK, fontweight="600", linespacing=1.35)
     ax.set_yticks(range(len(c["sectors"])))
-    ax.set_yticklabels(c["sectors"], fontsize=10.5, color=INK)
+    ax.set_yticklabels(c["sectors"], fontsize=11.5, color=INK, fontweight="600")
     ax.set_xticks(np.arange(-.5, len(c["macros"]), 1), minor=True)
     ax.set_yticks(np.arange(-.5, len(c["sectors"]), 1), minor=True)
     ax.grid(which="minor", color="white", linewidth=2.4)
     ax.tick_params(which="minor", length=0)
     for s in ax.spines.values():
         s.set_visible(False)
+    # Four callouts: one per economic channel (commodity, consumer demand, FX,
+    # industrial activity) so the eye lands on a story rather than 110 numbers.
+    KEY = {("Energy", "Oil price (YoY)"): "1",
+           ("Consumer Discretionary", "Retail sales (YoY)"): "2",
+           ("Consumer Staples", "US dollar (YoY)"): "3",
+           ("Industrials", "Industrial prod (YoY)"): "4"}
+    keyed = {(c["sectors"].index(s), c["macros"].index(m)): n
+             for (s, m), n in KEY.items()}
     for i in range(M.shape[0]):
         for j in range(M.shape[1]):
             v = M[i, j]
-            ax.text(j, i, f"{v:+.2f}".replace("+", "+").replace("-", "−"),
-                    ha="center", va="center", fontsize=9.5,
+            hot = (i, j) in keyed
+            ax.text(j, i, f"{v:+.2f}".replace("-", "−"),
+                    ha="center", va="center",
+                    fontsize=13 if hot else 10.5,
+                    fontweight="700" if hot else "normal",
                     color="white" if abs(v) >= 0.50 else INK)
+    for (i, j), n in keyed.items():
+        ax.add_patch(plt.Rectangle((j - .5, i - .5), 1, 1, fill=False,
+                                   edgecolor=INK, linewidth=3.0, zorder=5))
+        ax.text(j - .40, i - .34, n, ha="center", va="center", fontsize=10,
+                fontweight="700", color=INK, zorder=6,
+                bbox=dict(boxstyle="circle,pad=0.16", fc="white", ec=INK, lw=1.4))
     cb = fig.colorbar(im, ax=ax, fraction=0.022, pad=0.015)
     cb.outline.set_visible(False)
     cb.ax.tick_params(labelsize=9, color=MUTED)
@@ -94,10 +111,17 @@ def chart_heatmap():
           "Correlation of sector-median revenue growth with each macro series, "
           "2011Q1–2026Q1 · red = moves together, blue = moves opposite",
           y=1.055)
-    fig.text(0.008, -0.012,
+    fig.text(0.008, -0.085,
+             "Four channels worth calling out:    "
+             "1 Energy tracks oil almost one-for-one (+0.89)    "
+             "2 Consumer Discretionary follows retail sales (+0.79)\n"
+             "3 A stronger dollar depresses Consumer Staples (−0.65)    "
+             "4 Industrials move with industrial production (+0.60)",
+             fontsize=11.5, color=INK, linespacing=1.6)
+    fig.text(0.008, -0.155,
              "Sectors and variables both ordered by average absolute correlation. "
              "Correlation is descriptive — it does not mean the variable improves forecasts.",
-             fontsize=9, color=MUTED)
+             fontsize=9.5, color=MUTED)
     save(fig, "1_sector_macro_heatmap")
 
 
@@ -207,47 +231,72 @@ def chart_blend():
 
 # =========================================================== 3a. themes
 def chart_themes():
-    d = D["themes"]
-    order = sorted(d, key=lambda x: x["da"])
-    names = [x["n"] for x in order]
-    y = np.arange(len(order))
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.0), sharey=True)
-    for ax, (k, pk, ttl) in zip(axes, [("dq", "pq", "Next quarter"),
-                                       ("da", "pa", "One year ahead")]):
-        vals = [x[k] for x in order]
-        ps = [x[pk] for x in order]
-        cols = [(R_MAIN if v >= 0 else B_MAIN) for v in vals]
-        alphas = [1.0 if p < 0.05 else 0.45 for p in ps]
-        for i, (v, c, a) in enumerate(zip(vals, cols, alphas)):
-            ax.barh(i, v, color=c, alpha=a, height=0.6)
-        for i, (v, p) in enumerate(zip(vals, ps)):
-            off = 0.00016 if v >= 0 else -0.00016
-            ax.text(v + off, i, f"p={p:.3f}", va="center",
-                    ha="left" if v >= 0 else "right", fontsize=9.5,
-                    family="monospace", color=INK if p < 0.05 else MUTED)
-        ax.axvline(0, color=INK, linewidth=1.0)
-        ax.set_title(ttl, loc="left", fontsize=12, color=INK, fontweight="600", pad=8)
-        ax.set_xlim(-0.0034, 0.0044)
+    """Individual macro variables, ranked by how much the model uses them.
+
+    Bar length is per-variable (mean |SHAP|). Colour carries the *group*
+    ablation verdict — red where the variable's group significantly improves
+    forecasts, blue where it significantly hurts, grey where its group showed
+    no significant effect. Significance is group-level by design: with 49
+    quarters a per-variable ablation is underpowered, so the honest split is
+    'this variable is heavily used' (length) versus 'its group is proven'
+    (colour).
+    """
+    th = {t["n"]: t for t in D["themes"]}
+    KEYMAP = {"activity_demand": "Activity & demand", "inflation": "Inflation",
+              "rates_curve": "Rates & curve", "risk_credit": "Risk & credit",
+              "commodities_fx": "Commodities & FX"}
+
+    def colour(theme, panel):
+        t = th[KEYMAP[theme]]
+        delta, p = (t["dq"], t["pq"]) if panel == "q" else (t["da"], t["pa"])
+        if p >= 0.05:
+            return "#b9b7b0", 1.0            # group not proven either way
+        return (R_MAIN if delta > 0 else B_MAIN), 1.0
+
+    used = set()
+    fig, axes = plt.subplots(1, 2, figsize=(15.0, 7.0))
+    for ax, (key, panel, ttl) in zip(axes, [("quarterly", "q", "Next quarter"),
+                                            ("annual", "a", "One year ahead")]):
+        d = list(reversed(D["feat"][key]))
+        used.update(colour(x["th"], panel)[0] for x in d)
+        labs = [f"{x['v']}  ·  {x['lag']} qtr{'' if x['lag']==1 else 's'} back" for x in d]
+        vals = [x["s"] for x in d]
+        cols = [colour(x["th"], panel)[0] for x in d]
+        ax.barh(np.arange(len(d)), vals, color=cols, height=0.68)
+        for i, v in enumerate(vals):
+            ax.text(v + max(vals) * 0.018, i, f"{v:.2f}%", va="center",
+                    fontsize=12, color=INK, family="monospace")
+        ax.set_yticks(np.arange(len(d)))
+        ax.set_yticklabels(labs, fontsize=12, color=INK)
+        ax.set_xlim(0, max(vals) * 1.20)
+        ax.set_title(ttl, loc="left", fontsize=14, color=INK, fontweight="600", pad=10)
+        ax.set_xlabel("share of what the model uses", fontsize=11.5, color=INK2)
         ax.xaxis.grid(True, color=GRID, linewidth=0.8)
         ax.set_axisbelow(True)
-        ax.set_xticklabels([])
-        for s in ("top", "right", "left", "bottom"):
+        for s in ("top", "right", "left"):
             ax.spines[s].set_visible(False)
-    axes[0].set_yticks(y)
-    axes[0].set_yticklabels(names, fontsize=11)
-    axes[0].invert_yaxis()
-    fig.suptitle("Which macro variables actually improve forecasts",
-                 x=0.008, y=1.15, ha="left", fontsize=15, fontweight="600", color=INK)
-    fig.text(0.008, 1.055,
-             "Change in forecast error when each group is added alone · "
-             "solid = statistically significant (p<0.05)",
-             fontsize=10.5, color=MUTED)
-    fig.text(0.5, -0.015, "<-- makes forecasts worse    |    improves forecasts -->",
-             ha="center", fontsize=10, color=MUTED)
-    fig.text(0.008, -0.10,
-             "Only demand-activity indicators earn their place, and only at the one-year horizon. "
-             "Inflation actively hurts.\nQuarter-clustered Diebold–Mariano test across 49 quarters.",
-             fontsize=9, color=MUTED)
+        ax.tick_params(axis="x", labelsize=11, colors=INK2)
+    fig.subplots_adjust(wspace=0.62)
+    # only label categories that actually appear (no inflation variable reaches
+    # either top 12, so the "hurts" swatch would otherwise be an empty promise)
+    entries = [(R_MAIN, "Group significantly improves forecasts"),
+               (B_MAIN, "Group significantly hurts forecasts"),
+               ("#b9b7b0", "Group shows no significant effect")]
+    handles = [Patch(facecolor=c, label=l) for c, l in entries if c in used]
+    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.035),
+               ncol=len(handles), frameon=False, fontsize=12)
+    fig.suptitle("Which individual macro variables the model relies on",
+                 x=0.008, y=1.10, ha="left", fontsize=17, fontweight="600", color=INK)
+    fig.text(0.008, 1.035,
+             "Top 12 variables by contribution, with how far back the reading comes from · "
+             "colour = whether that variable's group passed the ablation test",
+             fontsize=12, color=INK2)
+    fig.text(0.008, -0.075,
+             "Next quarter, no macro group is statistically significant — the model leans on oil and "
+             "retail-sales momentum, but none of it provably helps.\nAt one year, industrial production "
+             "two quarters back is the single largest macro input, and its group is significant "
+             "(p=0.044); inflation significantly hurts (p=0.034).",
+             fontsize=10.5, color=MUTED, linespacing=1.5)
     save(fig, "3a_macro_importance")
 
 
