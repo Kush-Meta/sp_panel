@@ -59,7 +59,9 @@ D = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                "charts", "chart_data.json")))
 
 # =========================================================== 1. heatmap
-def chart_heatmap():
+def chart_heatmap(values=True, highlights=True, name="1_sector_macro_heatmap"):
+    """values: print the correlation in each cell. highlights: box the four
+    callout cells. Both off gives the pure colour field."""
     c = D["corr"]
     M = np.array(c["v"])
     fig, ax = plt.subplots(figsize=(13.0, 7.2))
@@ -86,23 +88,30 @@ def chart_heatmap():
            ("Consumer Discretionary", "Retail sales (YoY)"): "2",
            ("Consumer Staples", "US dollar (YoY)"): "3",
            ("Industrials", "Industrial prod (YoY)"): "4"}
-    keyed = {(c["sectors"].index(s), c["macros"].index(m)): n
-             for (s, m), n in KEY.items()}
-    for i in range(M.shape[0]):
-        for j in range(M.shape[1]):
-            v = M[i, j]
-            hot = (i, j) in keyed
-            ax.text(j, i, f"{v:+.2f}".replace("-", "−"),
-                    ha="center", va="center",
-                    fontsize=13 if hot else 10.5,
-                    fontweight="700" if hot else "normal",
-                    color="white" if abs(v) >= 0.50 else INK)
+    keyed = ({(c["sectors"].index(s), c["macros"].index(m)): n
+              for (s, m), n in KEY.items()} if highlights else {})
+    if values:
+        for i in range(M.shape[0]):
+            for j in range(M.shape[1]):
+                v = M[i, j]
+                hot = (i, j) in keyed
+                ax.text(j, i, f"{v:+.2f}".replace("-", "−"),
+                        ha="center", va="center",
+                        fontsize=13 if hot else 10.5,
+                        fontweight="700" if hot else "normal",
+                        color="white" if abs(v) >= 0.50 else INK)
     for (i, j), n in keyed.items():
         ax.add_patch(plt.Rectangle((j - .5, i - .5), 1, 1, fill=False,
                                    edgecolor=INK, linewidth=3.0, zorder=5))
-        ax.text(j - .40, i - .34, n, ha="center", va="center", fontsize=10,
-                fontweight="700", color=INK, zorder=6,
-                bbox=dict(boxstyle="circle,pad=0.16", fc="white", ec=INK, lw=1.4))
+        # with no printed values the box has room for the number in the middle
+        if values:
+            ax.text(j - .40, i - .34, n, ha="center", va="center", fontsize=10,
+                    fontweight="700", color=INK, zorder=6,
+                    bbox=dict(boxstyle="circle,pad=0.16", fc="white", ec=INK, lw=1.4))
+        else:
+            ax.text(j, i, n, ha="center", va="center", fontsize=12,
+                    fontweight="700", color=INK, zorder=6,
+                    bbox=dict(boxstyle="circle,pad=0.22", fc="white", ec=INK, lw=1.6))
     cb = fig.colorbar(im, ax=ax, fraction=0.022, pad=0.015)
     cb.outline.set_visible(False)
     cb.ax.tick_params(labelsize=9, color=MUTED)
@@ -111,18 +120,20 @@ def chart_heatmap():
           "Correlation of sector-median revenue growth with each macro series, "
           "2011Q1–2026Q1 · red = moves together, blue = moves opposite",
           y=1.055)
-    fig.text(0.008, -0.085,
-             "Four channels worth calling out:    "
-             "1 Energy tracks oil almost one-for-one (+0.89)    "
-             "2 Consumer Discretionary follows retail sales (+0.79)\n"
-             "3 A stronger dollar depresses Consumer Staples (−0.65)    "
-             "4 Industrials move with industrial production (+0.60)",
-             fontsize=11.5, color=INK, linespacing=1.6)
-    fig.text(0.008, -0.155,
+    foot_y = -0.155 if highlights else -0.075
+    if highlights:
+        fig.text(0.008, -0.085,
+                 "Four channels worth calling out:    "
+                 "1 Energy tracks oil almost one-for-one (+0.89)    "
+                 "2 Consumer Discretionary follows retail sales (+0.79)\n"
+                 "3 A stronger dollar depresses Consumer Staples (−0.65)    "
+                 "4 Industrials move with industrial production (+0.60)",
+                 fontsize=11.5, color=INK, linespacing=1.6)
+    fig.text(0.008, foot_y,
              "Sectors and variables both ordered by average absolute correlation. "
              "Correlation is descriptive — it does not mean the variable improves forecasts.",
              fontsize=9.5, color=MUTED)
-    save(fig, "1_sector_macro_heatmap")
+    save(fig, name)
 
 
 # =========================================================== 2a. leaderboard
@@ -337,8 +348,63 @@ def chart_lags():
     save(fig, "3b_macro_lag_structure")
 
 
+def chart_features_annual():
+    """Annual panel only — the quarterly side is entirely grey (nothing
+    significant), so this is the version that carries a finding."""
+    th = {t["n"]: t for t in D["themes"]}
+    KEYMAP = {"activity_demand": "Activity & demand", "inflation": "Inflation",
+              "rates_curve": "Rates & curve", "risk_credit": "Risk & credit",
+              "commodities_fx": "Commodities & FX"}
+    d = list(reversed(D["feat"]["annual"]))
+    labs = [f"{x['v']}  ·  {x['lag']} qtr{'' if x['lag']==1 else 's'} back" for x in d]
+    vals = [x["s"] for x in d]
+
+    def col(theme):
+        t = th[KEYMAP[theme]]
+        return "#b9b7b0" if t["pa"] >= 0.05 else (R_MAIN if t["da"] > 0 else B_MAIN)
+
+    cols = [col(x["th"]) for x in d]
+    fig, ax = plt.subplots(figsize=(11.6, 6.8))
+    ax.barh(np.arange(len(d)), vals, color=cols, height=0.7)
+    for i, v in enumerate(vals):
+        ax.text(v + max(vals) * 0.015, i, f"{v:.2f}%", va="center",
+                fontsize=13, color=INK, family="monospace")
+    ax.set_yticks(np.arange(len(d)))
+    ax.set_yticklabels(labs, fontsize=13, color=INK)
+    ax.set_xlim(0, max(vals) * 1.16)
+    ax.set_xlabel("share of what the model uses", fontsize=12.5, color=INK2)
+    ax.xaxis.grid(True, color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.tick_params(axis="x", labelsize=11.5, colors=INK2)
+    for s in ("top", "right", "left"):
+        ax.spines[s].set_visible(False)
+    used = set(cols)
+    entries = [(R_MAIN, "Group significantly improves forecasts"),
+               (B_MAIN, "Group significantly hurts forecasts"),
+               ("#b9b7b0", "Group shows no significant effect")]
+    handles = [Patch(facecolor=c, label=l) for c, l in entries if c in used]
+    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.11),
+              ncol=len(handles), frameon=False, fontsize=12)
+    title(ax, "Which macro variables matter for the one-year forecast",
+          "Top 12 by contribution, with how far back the reading comes from",
+          y=1.045)
+    fig.text(0.008, -0.20,
+             "Industrial production two quarters back is the single largest macro input, and its group "
+             "is the one that significantly\nimproves forecasts (p=0.044). The ~2-quarter delay is how "
+             "long macro conditions take to reach company revenue.",
+             fontsize=10.5, color=MUTED, linespacing=1.5)
+    save(fig, "3c_macro_importance_annual_only")
+
+
 if __name__ == "__main__":
     chart_heatmap()
+    chart_heatmap(values=False, highlights=True,
+                  name="1b_heatmap_no_numbers_highlights")
+    chart_heatmap(values=False, highlights=False,
+                  name="1c_heatmap_no_numbers_clean")
+    chart_heatmap(values=True, highlights=False,
+                  name="1d_heatmap_numbers_no_highlights")
+    chart_features_annual()
     chart_leaderboard()
     chart_robustness()
     chart_blend()
