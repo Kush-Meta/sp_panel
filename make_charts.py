@@ -493,7 +493,7 @@ def chart_source_split():
     just collapsed to their origin."""
     # Plot area holds bars, labels and numbers only. Every line of prose sits
     # below the axis in one block, so the figure crops cleanly to the chart.
-    rows = [("SEC filings (EDGAR)", 70.11, B_MAIN),
+    rows = [("Company financial\nindicators", 70.11, B_MAIN),
             ("Outside indicators", 29.89, R_MAIN)]
     fig, ax = plt.subplots(figsize=(11.0, 3.4))
     y = np.arange(len(rows))[::-1]
@@ -515,7 +515,7 @@ def chart_source_split():
             transform=ax.transAxes, fontsize=16, fontweight="600", color=INK,
             va="bottom", ha="left")
     fig.text(0.008, -0.34,
-             "SEC filings: revenue history · margins & fundamentals · accounting signals · "
+             "Company financial indicators (SEC EDGAR): revenue history · margins & fundamentals · accounting signals · "
              "sector peers' filings · management guidance\n"
              "Outside indicators: macro / FRED 13.0% · market & valuation 11.2% · "
              "sector value-added / BEA 3.8% · sector identity 2.0%\n"
