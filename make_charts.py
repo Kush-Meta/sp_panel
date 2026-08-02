@@ -396,7 +396,141 @@ def chart_features_annual():
     save(fig, "3c_macro_importance_annual_only")
 
 
+def chart_macro_lift():
+    """The plain answer to 'how much does macro help?' — percentage reduction
+    in forecast error, each configuration against the same model without that
+    macro component. Percentages because the raw RMSE gap (0.1918 -> 0.1907)
+    is invisible on a zero-based bar.
+    """
+    rows = [  # label, base RMSE, with-macro RMSE, p
+        ("Next quarter\nfull macro block", 0.191814, 0.190685, 0.428),
+        ("One year\nfull macro block", 0.236562, 0.235906, 0.601),
+        ("One year\n+ deeper lags (2-4 qtrs back)", 0.2367, 0.2348, 0.047),
+        ("One year\ndemand indicators only", 0.2366, 0.2341, 0.044),
+    ]
+    labs = [r[0] for r in rows]
+    pct = [100 * (r[1] - r[2]) / r[1] for r in rows]
+    ps = [r[3] for r in rows]
+    cols = [R_MAIN if p < 0.05 else "#b9b7b0" for p in ps]
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.6))
+    ax.barh(np.arange(len(rows)), pct, color=cols, height=0.62)
+    for i, (v, p) in enumerate(zip(pct, ps)):
+        sig = "significant" if p < 0.05 else "not significant"
+        ax.text(v + 0.035, i, f"{v:.2f}%   ({sig}, p={p:.3f})", va="center",
+                fontsize=12.5, color=INK if p < 0.05 else INK2)
+    ax.set_yticks(np.arange(len(rows)))
+    ax.set_yticklabels(labs, fontsize=12.5, color=INK, linespacing=1.5)
+    ax.set_xlim(0, max(pct) * 1.85)
+    ax.set_xlabel("reduction in forecast error from adding macro data",
+                  fontsize=12, color=INK2)
+    ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(0.5))
+    ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(decimals=1))
+    ax.xaxis.grid(True, color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.tick_params(axis="x", labelsize=11.5, colors=INK2)
+    ax.invert_yaxis()
+    for s in ("top", "right", "left"):
+        ax.spines[s].set_visible(False)
+    title(ax, "How much does macro data actually improve the model?",
+          "Each bar compares the same model with and without that macro component",
+          y=1.07)
+    fig.text(0.008, -0.20,
+             "For scale: the model as a whole beats the best naive benchmark by 18%. Macro is a small "
+             "contributor on top of that.\nIt is not statistically significant at the next-quarter "
+             "horizon; at one year, demand indicators and deeper lags both are.",
+             fontsize=10.5, color=MUTED, linespacing=1.5)
+    save(fig, "4_macro_lift")
+
+
+def chart_macro_share():
+    """How much of the one-year model the macro block accounts for.
+
+    Composition, not improvement: mean |SHAP| share of every feature group,
+    computed on the lag-ladder panel (macro at 1-4 quarters back), so the
+    macro figure is the 13.0% total across all its variables and lags.
+    """
+    g = [("Company's own history", 38.9), ("Fundamentals & margins", 21.3),
+         ("Macro", 13.0), ("Market / valuation", 11.2),
+         ("Accounting signals", 4.9), ("Sector value-added", 3.8),
+         ("Sector peers", 3.4), ("Sector identity", 2.0), ("Guidance", 1.6)]
+    labs = [x[0] for x in g][::-1]
+    vals = [x[1] for x in g][::-1]
+    cols = [R_MAIN if l == "Macro" else "#c9c7c0" for l in labs]
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.8))
+    ax.barh(np.arange(len(g)), vals, color=cols, height=0.66)
+    for i, (v, l) in enumerate(zip(vals, labs)):
+        ax.text(v + 0.6, i, f"{v:.1f}%", va="center",
+                fontsize=13 if l == "Macro" else 12,
+                fontweight="700" if l == "Macro" else "normal",
+                color=INK if l == "Macro" else INK2)
+    ax.set_yticks(np.arange(len(g)))
+    ax.set_yticklabels(labs, fontsize=13, color=INK,
+                       fontweight=["700" if l == "Macro" else "normal" for l in labs][0])
+    for t, l in zip(ax.get_yticklabels(), labs):
+        t.set_fontweight("700" if l == "Macro" else "normal")
+    ax.set_xlim(0, max(vals) * 1.16)
+    ax.set_xlabel("share of what the model uses", fontsize=12, color=INK2)
+    ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(decimals=0))
+    ax.xaxis.grid(True, color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.tick_params(axis="x", labelsize=11.5, colors=INK2)
+    for s in ("top", "right", "left"):
+        ax.spines[s].set_visible(False)
+    title(ax, "Macro data is 13% of the one-year model",
+          "Every macro variable, at every lag, added together", y=1.07)
+    fig.text(0.008, -0.15,
+             "Share of the model's total feature contribution (LightGBM SHAP). "
+             "The same block is 10.6% of the next-quarter model.",
+             fontsize=10.5, color=MUTED)
+    save(fig, "4_macro_share")
+
+
+def chart_source_split():
+    """Two blocks: what the companies filed with the SEC, versus everything
+    sourced from outside those filings. Same SHAP shares as 4_macro_share,
+    just collapsed to their origin."""
+    rows = [("What the companies filed\n(SEC EDGAR)", 70.11, B_MAIN,
+             "revenue history · margins & fundamentals · accounting signals\n"
+             "sector peers' filings · management guidance"),
+            ("Outside indicators", 29.89, R_MAIN,
+             "macro / FRED 13.0%  ·  market & valuation 11.2%\n"
+             "sector value-added / BEA 3.8%  ·  sector identity 2.0%")]
+    fig, ax = plt.subplots(figsize=(11.0, 4.6))
+    y = np.arange(len(rows))[::-1]
+    ax.barh(y, [r[1] for r in rows], color=[r[2] for r in rows], height=0.5)
+    for yy, r in zip(y, rows):
+        ax.text(r[1] + 1.2, yy, f"{r[1]:.0f}%", va="center", fontsize=17,
+                fontweight="700", color=INK)
+        ax.text(0, yy - 0.36, r[3], va="top", ha="left", fontsize=10.5,
+                color=MUTED, linespacing=1.5)
+    ax.set_yticks(y)
+    ax.set_yticklabels([r[0] for r in rows], fontsize=13.5, color=INK,
+                       linespacing=1.4)
+    ax.set_xlim(0, 100)
+    ax.set_ylim(-0.75, 1.5)
+    ax.set_xlabel("share of what the model uses", fontsize=12, color=INK2)
+    ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(decimals=0))
+    ax.xaxis.grid(True, color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.tick_params(axis="x", labelsize=11.5, colors=INK2)
+    for s in ("top", "right", "left"):
+        ax.spines[s].set_visible(False)
+    title(ax, "Seven-tenths of the one-year model is the companies' own filings",
+          "Every feature grouped by where the data came from", y=1.12)
+    fig.text(0.008, -0.30,
+             "Share of the model's total feature contribution (LightGBM SHAP). At the next-quarter "
+             "horizon the split is more lopsided still —\n82% filings, 18% outside indicators: the "
+             "shorter the forecast, the more it rests on what the company itself last reported.",
+             fontsize=10.5, color=MUTED, linespacing=1.5)
+    save(fig, "5_data_source_split")
+
+
 if __name__ == "__main__":
+    chart_source_split()
+    chart_macro_share()
+    chart_macro_lift()
     chart_heatmap()
     chart_heatmap(values=False, highlights=True,
                   name="1b_heatmap_no_numbers_highlights")
