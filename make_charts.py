@@ -491,39 +491,37 @@ def chart_source_split():
     """Two blocks: what the companies filed with the SEC, versus everything
     sourced from outside those filings. Same SHAP shares as 4_macro_share,
     just collapsed to their origin."""
-    rows = [("What the companies filed\n(SEC EDGAR)", 70.11, B_MAIN,
-             "revenue history · margins & fundamentals · accounting signals\n"
-             "sector peers' filings · management guidance"),
-            ("Outside indicators", 29.89, R_MAIN,
-             "macro / FRED 13.0%  ·  market & valuation 11.2%\n"
-             "sector value-added / BEA 3.8%  ·  sector identity 2.0%")]
-    fig, ax = plt.subplots(figsize=(11.0, 4.6))
+    # Plot area holds bars, labels and numbers only. Every line of prose sits
+    # below the axis in one block, so the figure crops cleanly to the chart.
+    rows = [("SEC filings (EDGAR)", 70.11, B_MAIN),
+            ("Outside indicators", 29.89, R_MAIN)]
+    fig, ax = plt.subplots(figsize=(11.0, 3.4))
     y = np.arange(len(rows))[::-1]
-    ax.barh(y, [r[1] for r in rows], color=[r[2] for r in rows], height=0.5)
+    ax.barh(y, [r[1] for r in rows], color=[r[2] for r in rows], height=0.55)
     for yy, r in zip(y, rows):
-        ax.text(r[1] + 1.2, yy, f"{r[1]:.0f}%", va="center", fontsize=17,
+        ax.text(r[1] + 1.5, yy, f"{r[1]:.0f}%", va="center", fontsize=20,
                 fontweight="700", color=INK)
-        ax.text(0, yy - 0.36, r[3], va="top", ha="left", fontsize=10.5,
-                color=MUTED, linespacing=1.5)
     ax.set_yticks(y)
-    ax.set_yticklabels([r[0] for r in rows], fontsize=13.5, color=INK,
-                       linespacing=1.4)
+    ax.set_yticklabels([r[0] for r in rows], fontsize=14, color=INK)
     ax.set_xlim(0, 100)
-    ax.set_ylim(-0.75, 1.5)
-    ax.set_xlabel("share of what the model uses", fontsize=12, color=INK2)
+    ax.set_xticks([0, 20, 40, 60, 80, 100])
     ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(decimals=0))
     ax.xaxis.grid(True, color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)
     ax.tick_params(axis="x", labelsize=11.5, colors=INK2)
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
-    title(ax, "Seven-tenths of the one-year model is the companies' own filings",
-          "Every feature grouped by where the data came from", y=1.12)
-    fig.text(0.008, -0.30,
-             "Share of the model's total feature contribution (LightGBM SHAP). At the next-quarter "
-             "horizon the split is more lopsided still —\n82% filings, 18% outside indicators: the "
-             "shorter the forecast, the more it rests on what the company itself last reported.",
-             fontsize=10.5, color=MUTED, linespacing=1.5)
+    ax.text(0, 1.30, "Where the one-year model's information comes from",
+            transform=ax.transAxes, fontsize=16, fontweight="600", color=INK,
+            va="bottom", ha="left")
+    fig.text(0.008, -0.34,
+             "SEC filings: revenue history · margins & fundamentals · accounting signals · "
+             "sector peers' filings · management guidance\n"
+             "Outside indicators: macro / FRED 13.0% · market & valuation 11.2% · "
+             "sector value-added / BEA 3.8% · sector identity 2.0%\n"
+             "Share of the model's total feature contribution (LightGBM SHAP). "
+             "At the next-quarter horizon the split is 82% / 18%.",
+             fontsize=10.5, color=MUTED, linespacing=1.7)
     save(fig, "5_data_source_split")
 
 
